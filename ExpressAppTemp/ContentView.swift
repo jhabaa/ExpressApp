@@ -52,6 +52,9 @@ struct ContentView: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var fetchmodel:FetchModels
     @EnvironmentObject var appSettings:AppSettings
+    @EnvironmentObject var panier:Panier
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var utilisateur:Utilisateur
     @State var firstViewShowed:Bool = false
     @State private var showSheet1 = false
     @State var home:Bool = true
@@ -72,10 +75,11 @@ struct ContentView: View {
             }
             
             if appSettings.logged{
-                if userdata.currentUser.isAdmin{
+                if utilisateur.this.isAdmin{
                     AdminView().transition(.identity)
                 }
-                if userdata.currentUser.isUser{
+                
+                if utilisateur.this.isUser{
                     UserView().transition(.identity)
                     .overlay(alignment: .bottom) {
                         TaskView()
@@ -91,6 +95,7 @@ struct ContentView: View {
                 }
             }
             //loading if images set is not full
+            /*
             if (!fetchmodel.services_ready){
                 VStack(alignment: .center, spacing: 20) {
                     Text("Chargement")
@@ -98,12 +103,22 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight:.infinity)
                 .background()
-                .onAppear{
-                    Task{
-                        await fetchmodel.FetchServices()
-                    }
-                }
+                
             }
+            */
+            //if network issue
+            if !appSettings.networkIsOn{
+                VStack{
+                    Text("Réseau indisponible")
+                        .foregroundStyle(.red)
+                        .bold()
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        
+                }.frame(width: GeometryProxy.size.width, alignment: .center)
+            }
+            
             //Notification
             Notification()
         }
@@ -116,6 +131,11 @@ struct ContentView: View {
         .onChange(of: appSettings.logged, perform: { newValue in
             print(newValue)
         })
+        .onAppear{
+            Task{
+                var n = await article.fetch()
+            }
+        }
         
         //Notification
         //loading
@@ -132,5 +152,8 @@ struct ContentView_Previews: PreviewProvider {
         ContentView().environmentObject(UserData())
             .environmentObject(FetchModels())
             .environmentObject(AppSettings())
+            .environmentObject(Panier())
+            .environmentObject(Article())
+            .environmentObject(Utilisateur())
     }
 }

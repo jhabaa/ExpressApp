@@ -11,6 +11,8 @@ struct AdminView: View {
     @Namespace var namespace : Namespace.ID
     @EnvironmentObject var fetchmodel : FetchModels
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
     //@Binding var showMenu:Bool
     @State  var searchEntry:String = ""
     @State var EditPage:Bool = true
@@ -40,19 +42,21 @@ struct AdminView: View {
                 .tabItem {
                     Label("Users", systemImage: "person.fill")
                 }
+                .onAppear(perform: {
+                    utilisateur.fetch()
+                })
                 
             
             ServicesAllView()
                 .tabItem {
                     Label("Services", systemImage: "server.rack")
                 }
-            
             CouponsView()
                 .tabItem {
                     Label("Promos", systemImage: "button.programmable")
-                        
                 }
                 .tint(.blue)
+                
             _SettingsView()
                 .tabItem{
                     Label("Reglages", systemImage: "gearshape")
@@ -62,14 +66,10 @@ struct AdminView: View {
         .tabViewStyle(.automatic)
         .tint(.green)
 
+
     }
     .background(.linearGradient(colors: [.clear.opacity(0),.blue.opacity(0.3),.blue.opacity(0.4)], startPoint: UnitPoint.topLeading, endPoint: UnitPoint.bottomTrailing))
-    .onAppear{
-        Task{
-           // await fetchmodel.FetchServices()
-        }
-        
-    }
+    
 
     }
 }
@@ -80,5 +80,7 @@ struct Previews_AdminView_Previews: PreviewProvider {
     static var previews: some View {
         AdminView().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Utilisateur())
+            .environmentObject(Commande())
     }
 }

@@ -11,8 +11,12 @@ struct Contacts: View {
     var body: some View {
         GeometryReader { GeometryProxy in
             VStack{
-                Image("logo120")
+                Image("logo180")
+                    .resizable()
+                    .scaledToFit()
+                
                     .clipShape(Circle())
+                    .padding()
                     .background{
                         Circle().fill(.thinMaterial).scaleEffect(1.02)
                             .shadow(color: .accentColor, radius: 20)
@@ -21,7 +25,11 @@ struct Contacts: View {
                     .padding()
                 Text("+32 02 420 41 30")
                     .padding(.bottom,10)
+                    .onTapGesture {
+                        UIPasteboard.general.string = "+32024204130"
+                    }
                 Text("info@expressdryclean.be")
+                    .textSelection(EnabledTextSelectability.enabled)
                 /*
                 VStack{
                     Text("""

@@ -13,6 +13,8 @@ var sewingCost:Int = 0
 
 struct HomeView: View {
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var utilisateur:Utilisateur
     @Namespace var animation:Namespace.ID
     @Namespace var namespace
     @State var selectedCategory:String = String()
@@ -39,13 +41,25 @@ struct HomeView: View {
                 ScrollView(showsIndicators: false) {
                     VStack{
                         //Date
-                        VStack{
-                            Greetings(proxy: Size)
+                        
+                        ScrollView(.horizontal){
+                            // PUB
+                            
+                            Image("shoes")
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 25.0))
+                                .padding()
+                                .frame(width: Size.width)
+                                
+                           // Greetings(proxy: Size)
+                            
                         }
+                        .edgesIgnoringSafeArea(.top)
                         Categories()
                             .offset(y:-frameY)
                             .opacity(minY)
-                            .padding(.top, 200)
+                            //.padding(.top, 200)
                         //Liste des services associés
                         VStack{
                             ServicesList()
@@ -67,15 +81,13 @@ struct HomeView: View {
             
             if showPage{
                 withAnimation(.interactiveSpring(blendDuration: 0.4)) {
-                    ArticleView(_article: currentArticle, show_page: $showPage)
+                    ArticleView(show_page: $showPage)
                         .transition(.asymmetric(insertion: .identity, removal: .opacity.animation(.spring())))
                         .transaction { t in
                             t.isContinuous = true
                             t.animation = .spring()
-                                
                         }
                         .matchedGeometryEffect(id: "service", in: namespace)
-                        //.matchedGeometryEffect(id: "service", in: selectedCategory)
                 }
             }
         }
@@ -87,17 +99,9 @@ struct HomeView: View {
                     .offset(x:-80,y:-300)
             }
             .frame(maxWidth: 450, maxHeight: .infinity)
-            .background(Color("fond"))
+            .background()
         }
-        .onAppear {
-            Task{
-               await fetchModel.FetchServices()
-                print(userdata.currentUser)
-            }
-            
-            dicoInfo = fetchModel.GetServiceMessage()
-            
-        }
+        
     }
     
     @ViewBuilder
@@ -123,7 +127,7 @@ struct HomeView: View {
                             
                         }
                         //Catégories
-                        ForEach(fetchModel.GetCategories().sorted(by: <), id: \.self) { cat in
+                        ForEach(article.GetCategories().sorted(by: <), id: \.self) { cat in
                             VStack{
                                 if (selectedCategory == cat){
                                     Rectangle().frame(height: 5)
@@ -143,9 +147,6 @@ struct HomeView: View {
                             
                         }
                     }
-                    
-                    
-                    
                 }
                 .padding()
             }.frame(height: 120, alignment:.bottom)
@@ -167,23 +168,17 @@ struct HomeView: View {
     func ServicesList() -> some View {
         LazyVGrid(columns: gridLayout, alignment: .center, spacing: 20, pinnedViews: .sectionHeaders) {
             Section {
-                ForEach(fetchModel.services.sorted(by: {$0.id < $1.id}), id: \.self) {
+                ForEach(article.all.sorted(by: {$0.id < $1.id}), id: \.self) {
                     card in
                     if (card.categories.contains(selectedCategory) || selectedCategory.isEmpty){
-                        ZStack(alignment:.bottom){
-                            Image(uiImage: (fetchModel.services_Images[card.illustration] ?? UIImage(named: "logo120"))!)
-                                .resizable()
-                                .clipped()
-                                .scaledToFill()
-                                .frame(maxWidth: 150)
-                                //.offset(x:0, y:-10)
-                                //.matchedGeometryEffect(id: "service", in: namespace)
+                        VStack(alignment:.center){
                             VStack(alignment: .center, spacing: 5) {
+                                Spacer()
                                 VStack{
                                     Text("\(card.name)")
                                         .font(.custom("Ubuntu", size: 20))
                                         .padding(.horizontal)
-                                        Text("\(card.cost.formatted(.currency(code: "EUR")))")
+                                    Text("\(card.cost.formatted(.currency(code: "EUR")))")
                                         .padding(.horizontal)
                                 }
                                 .padding(.horizontal,2)
@@ -193,20 +188,27 @@ struct HomeView: View {
                                 .offset(y:-20)
                             }
                             .frame(maxWidth: .infinity, alignment:.center)
-                            
-                            
                         }
                         
                         //.shadow(radius: 5)
                         .frame(height: 250)
+                        .background{
+                            Image(uiImage: (article.images[card.illustration] ?? UIImage(named: "logo120"))!)
+                                .resizable()
+                                .clipped()
+                                .scaledToFill()
+                                //.frame(maxWidth: 150)
+                                //.offset(x:0, y:-10)
+                                //.matchedGeometryEffect(id: "service", in: namespace)
+                        }
                         .background(Material.ultraThin)
                         .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
                         .padding(.bottom,10)
                         .onTapGesture {
                             Task{
-                                currentArticle = card
+                                //currentArticle = card
                                 withAnimation(.spring()){
-                                    showPage = true
+                                    showPage = article.set(card)
                                 }
                             }
                         }
@@ -216,12 +218,17 @@ struct HomeView: View {
                 }
             }
             .padding(.horizontal, 5)
+            
+            //Divider to mark the end
+            Divider()
+                .padding(.bottom,100)
         }
         //.padding(.horizontal, 10)
         //.onAppear(perform: fetchModel.fetchSewing)
         .onAppear{
-            print("voici les images")
-            print(fetchModel.services_Images)
+            Task{
+                await article.fetch()
+            }
         }
     }
     
@@ -232,6 +239,7 @@ struct HomeView: View {
         //var progress = minY / (proxyScroll.height * 400)
         GeometryReader { GeometryProxy in
             VStack{
+                
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing:20){
                         //Toutes catégories
@@ -250,7 +258,7 @@ struct HomeView: View {
                             
                         }
                         //Catégories
-                        ForEach(fetchModel.GetCategories().sorted(by: <), id: \.self) { cat in
+                        ForEach(article.GetCategories().sorted(by: <), id: \.self) { cat in
                             VStack{
                                 Text("\(cat)")
                                     .font(.title2)
@@ -280,7 +288,6 @@ struct HomeView: View {
             .frame(height: 150, alignment:.bottom)
             
         }
-        //.offset(y: minY < 100 ? -minY : 0).animation(.easeInOut, value: minY)
         .zIndex(10)
         
     }
@@ -304,14 +311,17 @@ struct HomeView: View {
                                                                       
                                                                       Color("fond").opacity(1),]
                                                              , startPoint: .top, endPoint: .bottom))
-                            HStack (spacing: 0, content: {
-                                Text("Bonjour \(userdata.currentUser.name),")
-                                    .font(Font.custom("Ubuntu", size: 30,relativeTo: .title))
-                            })
+                            VStack{
+                                HStack (spacing: 0, content: {
+                                    Text("Bonjour \(utilisateur.this.surname),")
+                                        .font(Font.custom("Ubuntu", size: 30,relativeTo: .title))
+                                })
+                                
+                            }
+                            
                             .padding(.top, 210)
                             .opacity(minY == 0 ? 1 : (1 + progress))
                             .offset(x: -minY)
-                            
                         })
                     })
                     .offset(y : -minY) // L'image reste figée
@@ -383,6 +393,8 @@ struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Article())
+            .environmentObject(Utilisateur())
     }
 }
 
