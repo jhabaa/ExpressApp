@@ -12,115 +12,147 @@ import SwiftUI
 struct Cart: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var fetchmodel : FetchModels
-    @State var promoCode:String=String()
-    @State var coupon_value:String=String()
+    @EnvironmentObject var panier:Panier
+    @EnvironmentObject var coupon:Coupons
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var utilisateur:Utilisateur
+    @Environment(\.colorScheme) var colorscheme
     @State var confirmation:Bool=false
     @State var cartPage:Int=0
     @State var datePage:Int=1
     @State var update_value:Bool=true
     @State var presentation_detent_default = PresentationDetent.medium
     @State var command_id_after_check:Int = Int()
+    @State var shippingDetails:Bool=false;
     var body: some View {
         GeometryReader { GeometryProxy in
-            VStack{
-                List{
+            
+                ScrollView{
+                    Rectangle()
+                        .frame(height: 0)
+                        .foregroundStyle(.clear)
+                        .padding(.top, 120)
                     Section {
-                        ForEach(Command.current_cart.keys.sorted(by: {$0.time < $1.time}), id: \.self) {
-                            service in
+                        ForEach(commande.services.sorted(by: {$0.service.id < $1.service.id}), id: \.self) { achat in
                             // Entry of the cart
-                            HStack(alignment:.bottom){
-                                // Image of the service
-                                Image(uiImage: (fetchmodel.services_Images[service.name] ?? UIImage(named: "logo120"))!)
-                                    .resizable()
-                                    .frame(width: 60, height: 60)
-                                    .scaledToFit()
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .shadow(radius: 2)
-                                
-                                //Name of the servive and quantity up and downdable
-                                VStack(alignment: .leading, spacing: 20) {
-                                    Text(service.name)
-                                        .bold()
+                            // remove, decrease, increase in commande
+                            HStack{
+                                //MARK: Object
+                                HStack{
+                                    Image("page 1")
+                                        .resizable()
+                                        .scaledToFit()
                                     
-                                    //quantity and buttons
-                                    HStack(alignment: .bottom, spacing: 10) {
-                                        Image(systemName: "minus.circle")
-                                            .onTapGesture {
-                                                userdata.currentCommand.decrease_in_cart(service)
-                                                update_value.toggle()
-                                                update_value.toggle()
+                                    //MARK: Articles Datas
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        Text(achat.service.name)
+                                        Text(achat.service.cost.formatted(.currency(code:"EUR")))
+                                            .bold()
+                                        Text("quantité : \(achat.quantity)")
+                                            .font(.caption2)
+                                    }
+                                    Spacer()
+                                    HStack{
+                                        Divider()
+                                        //minus button
+                                        Button {
+                                            //MARK: Remove an element of the cart
+                                            withAnimation {
+                                                commande.decrease(achat)
                                             }
-                                        
-                                        //quantity
-                                        if update_value{
-                                            Text("\(Command.current_cart[service]!)")
+                                        } label: {
+                                            Image(systemName: "minus.square.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                               
                                         }
+                                        .frame(width:40, height:40)
                                         
-                                        
-                                        Image(systemName: "plus.circle")
-                                            .onTapGesture {
-                                                userdata.currentCommand.increase_in_cart(service)
-                                                update_value.toggle()
-                                                update_value.toggle()
+                                        //plus button
+                                        Button {
+                                            //MARK: Add an element of the cart
+                                            withAnimation {
+                                                commande.increase(achat)
                                             }
-                                        
+                                        } label: {
+                                            Image(systemName: "plus.square.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                                
+                                        }
+                                        .frame(width:40, height:40)
                                     }
+                                    .padding()
                                 }
+                                
+                                .frame(maxWidth: .infinity, maxHeight:100, alignment:.leading)
+                                .background{
+                                    RoundedRectangle(cornerRadius: 2).fill(colorscheme == .dark ? .black : .white)
+                                        .shadow(color: .gray, radius: 2)
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: 2))
                                 Spacer()
-                                //Cost
-                                Text("\((service.cost * Decimal(Command.current_cart[service]!)).formatted(.currency(code: "EUR")))").font(.title3).bold()
-                            }
-                            //Swipe action
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    
-                                } label: {
-                                    VStack{
-                                        Image(systemName: "trash.fill")
-                                            .foregroundColor(.red)
-                                            .tint(.red)
+                                //MARK: Delete object Button
+                                Button {
+                                    withAnimation {
+                                        commande.remove(achat)
                                     }
-                                    .frame(width: 50)
-                                    .background(.red)
+                                } label: {
+                                    Image(systemName: "xmark.seal.fill")
                                 }
-                                .frame(width: 50)
+                                .frame(width:40, height:40)
+                                .buttonStyle(.borderedProminent)
+                                .tint(.red)
                             }
                         }
                     }
-                    //promocode
+                    
                     //PromoCode
-                    Section {
-                        
-                    }
+                    Section {}
                 header: {
                     HStack{
-                        TextField("Coupon", text: $promoCode)
+                        TextField("Coupon", text: .init(get: {
+                            coupon.this.code
+                        }, set: { Value in
+                            coupon.this.code = Value
+                        }))
                             .textCase(.uppercase)
                             .autocapitalization(UIKit.UITextAutocapitalizationType.allCharacters)
-                            .padding(.horizontal)
-                        
-
-                        Button{
-                            Task{
-                                coupon_value = await userdata.Check_Coupon(Coupon(promoCode, Decimal(0.00)))
+                            .padding()
+                            .autocorrectionDisabled(true)
+                            .background(.bar)
+                            .overlay(alignment: .trailing) {
+                                VStack{
+                                    Button{
+                                        Task{
+                                            commande.this.discount = await coupon.this.Check_Coupon()
+                                        }
+                                    }label: {
+                                        Text("Appliquer")
+                                            .font(.caption)
+                                            .padding(7)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .tint(Color("xpress"))
+                                    .colorInvert()
+                                }
+                                .frame(maxHeight: .infinity)
+                                .background(Color("xpress"))
                             }
-                        }label: {
-                            Text("Appliquer")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(Color.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
-                    .padding(.vertical)
-                    .background(.thickMaterial)
+                    .frame(maxWidth: 200)
+                    .padding(.horizontal,30)
                     .shadow(radius: 1)
-                    .clipShape(RoundedRectangle(cornerRadius: 40))
+                    
                 }
                 footer: {
                     //If promocode is correct
                     HStack{
-                        if !coupon_value.isEmpty{
-                            Label("\(coupon_value)", systemImage: "checkmark.circle")
+                        if (commande.this.discount != Decimal()){
+                            
+                            Label("Coupon de \(commande.this.discount.formatted(.currency(code:"eur"))) appliqué", systemImage: "checkmark.circle")
                                 .foregroundColor(.green)
                                 .font(.caption)
                                 .padding(.horizontal)
@@ -129,17 +161,39 @@ struct Cart: View {
                     .background(Color.clear)
                     //padding to escape the bottom bar
                     .padding(.bottom, 300)
-                    
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .clipShape(RoundedRectangle(cornerRadius: 1))
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(PlainListStyle())
                 .listRowSeparator(.visible, edges: VerticalEdge.Set.bottom)
                 .background(Color.clear)
                 .frame(maxWidth: .infinity)
                 
-            }
+            
            // .blur(radius: userdata.cart.isEmpty ? 20 : 0)
+            .task{
+                //Hide taskbar if cart is not empty
+                if !commande.services.isEmpty{
+                    userdata.taskbar = false
+                }
+            }
+            //Header
+            HStack(alignment:.bottom){
+                Button {
+                    userdata.GoToPage(goto: "accueil")
+                } label: {
+                    Text("Retour")
+                        .font(.custom("ubuntu", size: 20))
+                        
+                }
+                .padding(.horizontal)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .shadow(radius: 10)
+            }
+            .frame(alignment: .leading)
+            .offset(y:70)
+            
             VStack{
                 VStack(alignment: .center, spacing: 20) {
                     Group{
@@ -148,7 +202,7 @@ struct Cart: View {
                             Text("Sous-Total")
                             Spacer()
                             //Text(userdata.currentCommand.sub_total.formatted(.currency(code:"EUR")))
-                            Text(userdata.currentCommand.get_sub_total.formatted(.currency(code: "EUR")))
+                            Text(commande.getCost.formatted(.currency(code: "EUR")))
                                .bold()
                         }
                         .padding(.horizontal)
@@ -157,8 +211,20 @@ struct Cart: View {
                         HStack(alignment: .center) {
                             Text("Frais livraison")
                             Spacer()
-                            Text(userdata.currentCommand.delivery.formatted(.currency(code: "EUR")))
-                                .bold()
+                            if (commande.this.delivery == 0.00){
+                                Text("Calcul...")
+                                    .foregroundStyle(.red)
+                                    .italic()
+                                    .onTapGesture(perform: {
+                                        shippingDetails.toggle()
+                                    })
+                                    .alert("Nous reviendrons vers vous par email ou par appel pour fixer le prix de la livraison", isPresented: $shippingDetails, actions: {
+                                        
+                                    })
+                            }else{
+                                Text(commande.this.delivery.formatted(.currency(code: "EUR")))
+                                    .bold()
+                            }
                         }
                         .padding(.horizontal)
                         
@@ -166,7 +232,7 @@ struct Cart: View {
                         HStack(alignment: .center) {
                             Text("Reduction")
                             Spacer()
-                            Text(userdata.currentCommand.discount.formatted(.currency(code: "EUR")))
+                            Text("-\(commande.this.discount.formatted(.currency(code: "EUR")))")
                                 .bold()
                         }
                         .padding(.horizontal)
@@ -177,49 +243,83 @@ struct Cart: View {
                     HStack(alignment: .center) {
                         Text("Total")
                         Spacer()
-                        Text(userdata.Get_Cost_command().formatted(.currency(code: "EUR")))
+                        Text(commande.TotalCost.formatted(.currency(code: "EUR")))
                             .bold()
                     }
                     .bold()
                     .padding(.horizontal)
-                    .padding(.bottom, 80)
+                    .padding(.bottom, 30)
                 }
-                .background(.ultraThinMaterial)
+                
+                    // Continue Button if price is greather than 30€
+                
+                    Button {
+                        userdata.show_date_selector_view = true
+                    } label: {
+                        Text("Continuer")
+                        .frame(maxWidth: .infinity)
+                    }
+                    .font(.title)
+                    .buttonStyle(.borderedProminent)
+                    .padding(.bottom, 30)
+                    .frame(height:commande.subTotal >= 30.0 ? 40 : 0)
+                    .offset(y: commande.subTotal >= 30.0 ? 0 : 100)
+                    .animation(.pulse(), value: commande.subTotal)
             }
+            .padding()
+            .background{
+               RoundedRectangle(cornerRadius: 40)
+                    .fill(.bar)
+                    .shadow(radius: 10)
+            }
+            .padding()
+            
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment:.bottom)
+            .ignoresSafeArea(SafeAreaRegions.all)
+            //get delivery cost
+            .onAppear {
+                Task{
+                    commande.this.delivery =
+                    await commande.getDeliveryCost(utilisateur.this)
+                }
+                
+                
+            }
             //.blur(radius: userdata.cart.isEmpty ? 20 : 0)
             
-            //if cart is empty, print it
-            
-            if Command.current_cart.isEmpty{
-                VStack(alignment: .center, spacing: 20) {
-                    Text("Panier Vide")
-                        .font(.custom("coffeeandcrafts", size: 50))
-                        
-                }
-                .frame(maxWidth: .infinity, maxHeight:.infinity)
-                .background(Material.ultraThinMaterial)
+            if userdata.show_date_selector_view{
+                Date_selector_View(show: $userdata.show_date_selector_view)
             }
-             
+            
+            //if cart is empty, print it
+            if commande.isEmpty{
+                VStack(alignment: .center, spacing: 20) {
+                    Image("empty")
+                        .resizable()
+                        .scaledToFit()
+                        .shadow(radius: 5)
+                        
+                    Text("Panier Vide")
+                        .font(.custom("BebasNeue", size: 100))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.3)
+                    
+                }
+                .frame(maxWidth: .infinity, maxHeight:.infinity, alignment:.top)
+                .background(Color("xpress").gradient)
+            }
         }
         .frame(alignment: .bottom)
         
-        //Dates pages
-        .fullScreenCover(isPresented: $userdata.show_date_selector_view) {
-            Date_selector_View(show: $userdata.show_date_selector_view, command_id: $command_id_after_check)
-        }
-        
-        //Confirmation page
-        .sheet(isPresented: $userdata.command_confirmation, onDismiss: {
-            //on dismiss
-            Command.current_cart = [:]
-            Command.current_cart.removeAll()
-            userdata.currentCommand = Command()
-        }, content: {
-            Command_confirmation(_command_id: $command_id_after_check)
-        })
         //Background
+        .ignoresSafeArea()
         .background(.ultraThinMaterial)
+        .background{
+            RadialGradient(colors: [
+                colorscheme == .dark ? Color("xpress") : Color("xpress"),
+                colorscheme == .dark ? Color("xpress").opacity(0.2) : Color("xpress").opacity(0.2)
+            ], center: .bottom, startRadius: 50, endRadius: 300)
+        }
     }
     
 }
@@ -228,5 +328,9 @@ struct Cart_Previews: PreviewProvider {
     static var previews: some View {
         Cart().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Panier())
+            .environmentObject(Coupons())
+            .environmentObject(Commande())
+            .environmentObject(Utilisateur())
     }
 }

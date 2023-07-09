@@ -24,6 +24,52 @@ struct Arc: Shape {
     }
 }
 
+
+//video background
+import AVKit
+import AVFoundation
+
+
+struct PlayerView: UIViewRepresentable {
+    func updateUIView(_ uiView: UIView, context: UIViewRepresentableContext<PlayerView>) {
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        return LoopingPlayerUIView(frame: .infinite)
+    }
+}
+
+class LoopingPlayerUIView: UIView {
+    private let playerLayer = AVPlayerLayer()
+    private var playerLooper: AVPlayerLooper?
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        // Load the resource -> h
+        let fileUrl = Bundle.main.url(forResource: "vid1", withExtension: "mp4")!
+        let asset = AVAsset(url: fileUrl)
+        let item = AVPlayerItem(asset: asset)
+        // Setup the player
+        let player = AVQueuePlayer()
+        playerLayer.player = player
+        playerLayer.videoGravity = .resizeAspectFill
+        layer.addSublayer(playerLayer)
+        // Create a new player looper with the queue player and template item
+        playerLooper = AVPlayerLooper(player: player, templateItem: item)
+        
+        playerLayer.speed = player.rate
+        
+        // Start the movie
+        player.play()
+    }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = bounds
+    }
+}
 //extension pour l'effet de transparence
 extension View{
     func blurSheet<Content: View>(_ style: AnyShapeStyle, show: Binding<Bool>, onDismiss: @escaping ()->(), @ViewBuilder content: @escaping ()-> Content) -> some View{
@@ -68,6 +114,10 @@ struct FirstScreen: View {
     @EnvironmentObject var fetchModels:FetchModels
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var appSettings:AppSettings
+    @EnvironmentObject var utilisateur:Utilisateur
+    @Environment(\.colorScheme) var colorScheme
+    
+    @StateObject private var focusState = focusObjects()
     @FocusState var focustate:adress_field?
     @FocusState var focusField:user_field?
     //@AppStorage("id") private var id = ""
@@ -115,90 +165,110 @@ struct FirstScreen: View {
                         .font(.title)
                         .padding()
                         .padding(.horizontal, 30)
+                        .foregroundStyle(colorScheme == .dark ? .black.opacity(0.8):.white.opacity(0.8))
                         .background{
-                            RoundedRectangle(cornerRadius: 10 ).fill(Color("fond").opacity(0.9))
-                                .matchedGeometryEffect(id: "start", in: namespace)
-                                .shadow(radius: 2)
+                            Capsule()
+                                .fill()
+                                .shadow(color: Color("xpress").opacity(0.8), radius: 10)
+                                
                         }
                         .padding(.vertical, 30)
                         .onTapGesture {
                             // Show Sign In view
-                            withAnimation(.easeInOut){
+                            withAnimation(.spring){
                                 connectionPresentation.toggle()
                             }
                         }
                     }
-                    // Se connecter avec
-                    /*
-                    HStack {
-                        Rectangle()
-                          .frame(width: 100, height: 1)
-                          .foregroundColor(.gray)
-                          .background(Color.clear)
-                        Text("Se connecter avec").bold().font(.caption)
-                            
-                        Rectangle()
-                          .frame(width: 100, height: 1)
-                          .foregroundColor(.gray)
-                          .background(Color.clear)
-                    }
-                    HStack {
-                        Image(systemName: "apple.logo")
-                            .scaleEffect(1.5)
-                            .colorInvert()
-                            .padding()
-                            .onTapGesture {
+                    
+                    if !connectionPresentation{
+                        if #available(iOS 16.0, *) {
+                            HStack(spacing:20){
+                                Text("Pas de compte?")
+                                    
+                                Button {
+                                    signInView.toggle()
+                                } label: {
+                                    Text("S'enregister")
+                                }
+                                
+                            }.bold().padding()
+                        } else {
+                            // Fallback on earlier versions
+                            HStack(spacing:20){
+                                Text("Pas de compte?")
+                                    .foregroundColor(.blue)
+                                    //.colorInvert()
+                                Button {
+                                    
+                                } label: {
+                                    Text("S'enregister").bold()
+                                }
                                 
                             }
-                            .background{
-                                Circle().fill()
-                            }
-                            
-                    }.padding()*/
-                    if #available(iOS 16.0, *) {
-                        HStack(spacing:20){
-                            Text("Pas de compte?")
-                                
-                            Button {
-                                signInView.toggle()
-                            } label: {
-                                Text("S'enregister")
-                            }
-                            
-                        }.bold().padding()
-                    } else {
-                        // Fallback on earlier versions
-                        HStack(spacing:20){
-                            Text("Pas de compte?")
-                                .foregroundColor(.blue)
-                                //.colorInvert()
-                            Button {
-                                
-                            } label: {
-                                Text("S'enregister").bold()
-                            }
-                            
                         }
                     }
+                    
                 }
                 .padding(.vertical, 30)
                 .coordinateSpace(name: "btn1")
                 .matchedGeometryEffect(id: "btn1", in: namespace)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .fullScreenCover(isPresented: $signInView, onDismiss: {
-            }, content: {
-                //#warning("Fix this before commit")
-                SignIN(_show: $signInView)
-                  //  .background(.clear)
-            })
+            .frame(width: size.width, height: size.height, alignment: .bottom)
             
-            
+            //Connexion stack
             if connectionPresentation{
-                ConnectionView(connectionView: $connectionPresentation, showMenu: $showMenu)
-                    //.background(.ultraThinMaterial)
-                    .matchedGeometryEffect(id: "start", in: namespace)
-                    .padding(.top, 200)
+                VStack{
+                    VStack{
+                        CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
+                                //.shadow(color: .secondary, radius: 5)
+                        
+                        
+                        //Password
+                            CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe"
+                                ,hideMode:false,
+                                type:.password)
+                            //.shadow(color: .secondary, radius: 5)
+
+                        //Bouton
+                        
+
+                        Button {
+                            Task {
+                                let response = await utilisateur.connect(user: utilisateur.this)
+                                if response{
+                                    print("connexion")
+                                    appSettings.connect()
+                                }
+                            }
+                        } label: {
+                            VStack{
+                                Text("Se Connecter").font(.system(size: 20))
+                                    .padding()
+                                    .foregroundStyle(colorScheme == .dark ? .black : .white)
+                            }
+                            .frame(maxWidth: .infinity)
+                                
+                        }
+                        .padding()
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.roundedRectangle(radius: 10))
+                        .tint(colorScheme == .dark ? .white : .black)
+                        
+                        
+                    }
+                    .padding(.horizontal, 30)
+                    .frame(maxWidth: .infinity, maxHeight:.infinity)
+                    //.frame(width: size.width, height: 300, alignment:.center)
+
+                    .ignoresSafeArea(.keyboard)
+                }
+                .ignoresSafeArea(.keyboard, edges: Edge.Set.bottom)
+            }
+           
+            
+            if signInView{
+                SignIN(_show: $signInView, place: IdentifiablePlace.init(lat: 50.8, long: 4))
             }
         }
         .onAppear{
@@ -226,6 +296,34 @@ struct FirstScreen: View {
                 connectionPresentation = false
             }
         }
+        .frame(alignment: .bottom)
+        
+        .background{
+            let colorWhenPresentationIsOff = connectionPresentation ? 0.4 : 0
+            if !signInView{
+                PlayerView()
+                    .blur(radius: connectionPresentation ? 12.4 : 0, opaque: true)
+                    
+                    .overlay(alignment: .top) {
+                        LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .top, endPoint: .center)
+                            
+                            
+                        LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .bottom, endPoint: .center)
+                            
+                    }
+                    .overlay(alignment: .top) {
+                        ExpressLogo()
+                            .matchedGeometryEffect(id: "logo", in: namespace)
+                    }
+                    .onTapGesture{
+                        connectionPresentation = false
+                    }
+            }
+           
+                
+        }
+        .environmentObject(focusState)
+        
     }
     ///This function get adress parts in and return true if adress seems correct
     
@@ -256,11 +354,9 @@ func Password_verification(a:String, b:String)->Bool{
         }else{
             return true
         }
-        
     }else{
         return false
     }
-    
 }
 
 
@@ -270,5 +366,6 @@ struct FirstScreen_Previews: PreviewProvider {
         FirstScreen(showMenu: .constant(true), showHome: .constant(false))
             .environmentObject(FetchModels())
             .environmentObject(UserData())
+            .environmentObject(Utilisateur())
     }
 }

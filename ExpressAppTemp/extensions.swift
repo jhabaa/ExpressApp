@@ -40,8 +40,90 @@ extension Date{
         return limit_date
     }
     
+    /// Function to return an array of dates which starts as self and ends with the given date.
+    /// - Parameter x: last date
+    /// - Returns: And Array [Date]
+    func datesTil(_ x:Date)->[Date]{
+        var r:[Date] = []
+        var current:Date = self
+        let calendar:Calendar = Calendar.init(identifier: .gregorian)
+        repeat {
+            r.append(current)
+            current = calendar.date(byAdding: .day, value: 1, to: current)!
+        }while(current <= x)
+        return r
+    }
+    
+    var defaultDate:Date{
+        return "2000/01/01".toDate()
+    }
+    
+    var day:String{
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd"
+        return dateFormatter.string(from: self)
+    }
+    var month:String{
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMM"
+        return dateFormatter.string(from: self)
+        //return calendar.component(Calendar.Component.month, from:self)
+    }
+    var monthfull:String{
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMMM"
+        return dateFormatter.string(from: self)
+        //return calendar.component(Calendar.Component.month, from:self)
+    }
+    
     func get_month()->Int{
         let calendar:Calendar = Calendar.init(identifier: .gregorian)
         return calendar.dateComponents([.month], from: self).month!
     }
+    
+    func formatDate()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "dd-MMM-YYYY"
+        return dateformater.string(from: self)
+    }
+    func dateUserfriendly()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "EEEE dd MMMM YYYY"
+        return dateformater.string(from: self)
+    }
+    
+    func mySQLFormat()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "yyyy/MM/dd"
+        return dateformater.string(from: self)
+    }
+    func dribbleStyle()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "yyyy.MM.dd"
+        return dateformater.string(from: self)
+    }
+    
+    func isEqualTo(_ s:String)->Bool{
+        let newDate = s.toDate()
+        return self == s.toDate()
+    }
 }
+
+
+let dateRange: ClosedRange<Date> = {
+    let calendar = Calendar.current
+    let startComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: Date())
+    let endComponents = DateComponents(year: 2024, month: 12, day: 31, hour: 23, minute: 59, second: 59)
+    return calendar.date(from: startComponents)!
+        ...
+        calendar.date(from:endComponents)!
+}()
+
+
+
+let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "MMM dd"
+    return formatter
+}()
+

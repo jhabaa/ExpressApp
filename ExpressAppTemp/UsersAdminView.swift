@@ -8,19 +8,18 @@
 import SwiftUI
 
 struct UsersAdminView: View {
-    @StateObject var fetchModel = FetchModels()
+    //@StateObject var fetchModel = FetchModels()
+    @EnvironmentObject var utilisateur:Utilisateur
     var body: some View {
         NavigationView{
             VStack{
-                List(fetchModel.users, id: \.self){
+                List(utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){
                     user in
                     
                 }.listStyle(.plain)
-                
-                
-                
             }.onAppear(perform: {
-                fetchModel.fetchUsers()
+                //fetchModel.fetchUsers()
+                utilisateur.fetch()
             })
             .navigationTitle("User").navigationBarTitleDisplayMode(.automatic)
         }.navigationViewStyle(.stack)
@@ -30,5 +29,6 @@ struct UsersAdminView: View {
 struct UsersAdminView_Previews: PreviewProvider {
     static var previews: some View {
         UsersAdminView()
+            .environmentObject(Utilisateur())
     }
 }

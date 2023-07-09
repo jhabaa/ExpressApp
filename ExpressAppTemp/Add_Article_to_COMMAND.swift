@@ -14,7 +14,39 @@ struct Add_Article_to_COMMAND: View {
     @State var _quantity:Int=Int()
     @StateObject var fetchmodel=FetchModels()
     var body: some View {
-        GeometryReader { GeometryProxy in
+        GeometryReader {
+            let size = $0.size
+            
+            
+            
+            ScrollView {
+                Divider().padding(.top, 100)
+                LazyVGrid(columns: [GridItem(.flexible()),GridItem(.flexible()),GridItem(.flexible())]) {
+                    ForEach(fetchmodel.services, id: \.self) { service in
+                        ZStack(alignment:.topTrailing){
+                            Image(uiImage: (fetchmodel.services_Images[service.illustration] ?? UIImage(named: "logo120"))!)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 120,height: 120)
+                                .clipped()
+                            
+                            //number
+                            Text("\(cart[service] ?? 0)")
+                                .padding(5)
+                                .background(Color("xpress").gradient)
+                        }
+                        //.frame(maxHeight: 120)
+                        .onTapGesture(count: 2, perform: {
+                            var n = cart[service] ?? 0
+                            
+                            cart.updateValue(n+1, forKey: service)
+                        })
+                        
+                    }
+                }
+                
+            }
+            /*
             VStack(alignment: .center){
                 //Card
                 HStack{
@@ -70,22 +102,30 @@ struct Add_Article_to_COMMAND: View {
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 30))
             .padding()
+             */
             
-            .overlay(alignment: .topLeading) {
-                    Image(systemName: "arrow.backward.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40)
-                    .padding(.top, 50)
-                    .padding(.leading, 20)
-                    .onTapGesture {
-                        //userdata.Back()
+            //header
+            VStack{
+                VStack(alignment:.leading){
+                    //back button
+                    Button("Retour"){
                         withAnimation {
                             _show_this = false
                         }
                     }
-                
+                    //.padding()
+                   
+                    HStack{
+                        Text("Ajouter articles")
+                            .font(.title)
+                            .bold()
+                    }
+                }
+                .padding()
             }
+            .frame(width: size.width, height: 100, alignment:.bottomLeading)
+            .background(Color("xpress").gradient.blendMode(.sourceAtop))
+            .background(.ultraThinMaterial)
         }
         .background(.ultraThinMaterial)
         .onAppear{

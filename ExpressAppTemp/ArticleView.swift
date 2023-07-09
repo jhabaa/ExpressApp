@@ -10,55 +10,103 @@ import SwiftUI
 struct ArticleView: View {
     @EnvironmentObject var userdata : UserData
     @EnvironmentObject var fetchmodel:FetchModels
+    @EnvironmentObject var commande:Commande
+   // @EnvironmentObject var panier:Panier
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var alerte:Alerte
+    @Environment(\.colorScheme) var colorscheme
     //@Namespace var animation : Namespace.ID
     @Namespace var selected_service:Namespace.ID
-    @State var _article:Service
+    //@State var _article:Service
     @State var quantity = 0
     @Binding var show_page:Bool
     @State var choice_method:Bool = true
+    @State var achat:Achat = Achat(quantity: 0)
     var body: some View {
         GeometryReader{ GeometryProxy in
             let size = GeometryProxy.size
-            VStack{
-                Image(uiImage: (fetchmodel.services_Images[_article.illustration] ?? UIImage(named: "logo120"))!)
+            
+            //Article image in background wiht overlay
+            ZStack(alignment:.trailing){
+                Image(uiImage: (article.images[article.this.illustration] ?? UIImage(named: "page 4"))!)
                     .resizable()
-                    .clipShape(RoundedRectangle(cornerRadius: 50))
-                    .frame(height: size.height/2)
                     .scaledToFill()
-                    .padding()
+                    .clipped()
+                    .frame(maxWidth: size.width, maxHeight: .infinity)
+                VStack{
+                    
+                }
+                .frame(maxWidth: size.width, maxHeight: .infinity)
+                .background(LinearGradient(colors: [
+                colorscheme == .dark ? .black.opacity(0) : .white.opacity(0),
+                colorscheme == .dark ? .black.opacity(1) : .white.opacity(1)
+                ], startPoint: .top, endPoint:.bottom))
+                
+                //MARK: Quantity selector
+                VStack{
+                    Text("Quantité")
+                        .bold()
+                        .shadow(radius: 2)
+                    Picker("Quantité", selection: $achat.quantity) {
+                        withAnimation() {
+                            ForEach(0...100,id: \.self) {
+                                Text(" \($0)").tag($0)
+                                    //.font(achat.quantity == $0 ? .largeTitle : .callout)
+                                    //.foregroundStyle(achat.quantity == $0 ? .blue : .white)
+                            }
+                        }
+                       
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: 60)
+                    .labelStyle(.titleAndIcon)
+                    .padding(1)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .shadow(radius: 5)
+                }
+                
+                .animation(.spring(), value: quantity)
+                .padding(.horizontal, 10)
+            }
+            .frame(maxWidth: size.width)
+            
+            // Description and others
+            VStack(alignment:.leading){
+                // Process time
+                Label("\(article.this.time) jours pour la livraison", systemImage: "info.circle")
+                    .font(Font.custom("Ubuntu", size: 10.0))
+                    .shadow(color: Color("fond"), radius: 10)
+                    .tint(.gray)
+                    .underline()
+
                 
                 // Article Name
                 HStack(alignment: .top) {
-                    Text("\(_article.name)")
-                        .font(Font.custom("Ubuntu", size: 30.0))
+                    Text("\(article.this.name)")
+                        .font(Font.custom("BebasNeue", size: 50.0))
                         .multilineTextAlignment(.leading)
-                        
-                    Spacer()
-                    VStack{
-                        Text("\((_article.cost).formatted(.currency(code: "EUR")))").font(.custom("GashingtonClassy", size: 50)).bold()
-                            //.shadow(color: Color("fond"), radius: 10)
-                        Label("\(_article.time) jours pour livraison", systemImage: "info.circle")
-                            .font(Font.custom("Ubuntu", size: 10.0))
-                            .shadow(color: Color("fond"), radius: 10)
-                            .foregroundColor(.gray)
-                            .tint(.gray)
-                    }
-                    
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.2)
+                        .shadow(radius: 3)
+                }
+                //Description
+                HStack{
+                    Text(article.this.description)
+                    //.background(.thinMaterial)
+                    //.clipShape(RoundedRectangle(cornerRadius: 10))
+                    .font(Font.custom("Ubuntu", size: 13.0))
+                    //.multilineTextAlignment(.leading)
                     
                 }
-                .padding(.horizontal)
-                //Description
-                
-                Text(_article.description)
-                .frame(maxWidth: .infinity)
-                //.background(.thinMaterial)
-                //.clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment:.leading)
                 
                 //caution
-                if _article.name.contains("kilo"){
+                if article.this.description.contains("kilo"){
                     GroupBox(content: {
                         Text("Nos experts se chargeront d'estimer le poids exact")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.4)
                             
                     }, label: {
                         Label("Info", systemImage: "info.circle")
@@ -67,145 +115,89 @@ struct ArticleView: View {
                     .padding(.horizontal)
                     .font(.caption)
                 }
+                //MARK: Price
+                VStack(alignment: .leading, spacing: 0) {
+                    var total = Decimal(achat.quantity) * article.this.cost
+                    Text("\((article.this.cost).formatted(.currency(code: "EUR")))").font(.custom("BebasNeue", size: 30)).bold()
+                        //.shadow(color: colorscheme == .dark ? .white : .black, radius: 10)
+                        .shadow(radius: 5)
+                    //MARK: Total Price
+                    HStack{
+                        Text("x\(achat.quantity) unités")
+                            .font(.caption2)
+                        Text("\(total.formatted(.currency(code: "eur")))")
+                            .font(.custom("BebasNeue", size: 20))
+                            .opacity(achat.quantity > 0 ? 1 : 0)
+                    }
+                    
+                }
                 
-                //Quantity & selector
-                HStack{
-                    LazyVGrid(columns: [GridItem(.flexible(minimum: 200, maximum: 300)), GridItem(.flexible(minimum: 150, maximum: 300))]) {
-                        //Quantity
-                        if Command.current_cart.contains(where: {$0.key == _article}){
-                            VStack{
-                                Text("\(Command.current_cart[_article]!)")
-                                    .padding()
-                                    .font(.custom("Coffee and crafts", size: 50)).bold()
-                                    
+                //MARK: To buy button
+                    HStack(alignment:.center){
+                        Button {
+                            commande.toCart(achat)
+                            //Show notification
+                            alerte.this.text = "Article ajouté"
+                            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 2, execute: {
+                                alerte.this.text = String()
+                            })
+                            //close view
+                            withAnimation {
+                                show_page = false
                             }
-                            .frame(maxWidth: .infinity)
-                            .background(.thinMaterial)
-                            .cornerRadius(20)
-                        }else{
-                            VStack{
-                                Text("\(quantity > 0 ? String(quantity) : " ")")
-                                    .padding()
-                                    .font(.custom("Coffee and crafts", size: 50)).bold()
-                            }
-                            .frame(maxWidth: .infinity)
-                            .background(.thinMaterial)
-                            .cornerRadius(20)
+                        } label: {
+                            Label("Ajouter au panier", systemImage: "shippingbox.circle.fill")
+                                .font(.title)
                         }
-          
-                            
-                        
-                        //buttons
-                        HStack{
-                            LazyVGrid(columns: [GridItem(),GridItem()]) {
-                                VStack{
-                                    Text("-")
-                                        .font(.custom("", size: 50))
-                                        .frame(height: 80)
-                                        .clipped()
-                                }
-                                .frame(maxWidth: .infinity, maxHeight:.infinity)
-                                .background(.thickMaterial)
-                                .onTapGesture {
-                                    //quantity -= quantity > 0 ? 1 : 0
-                                    //userdata.RemoveServiceFromCart(s: _article)
-                                    quantity -= quantity > 0 ? 1 : 0
-                                }
-                                
-                                VStack{
-                                    Text("+")
-                                        .font(.custom("", size: 40))
-                                        .bold()
-                                        
-                                        
-                                }
-                                .frame(maxWidth: .infinity, maxHeight:.infinity)
-                                .background(.thickMaterial)
-                                .onTapGesture {
-                                    //userdata.AddServiceToCart(s: _article)
-                                    quantity += 1
-                                }
-                            }
-                        }
-                        //.frame(maxWidth: .infinity, maxHeight:.infinity)
-                        .background(.thinMaterial)
-                        .cornerRadius(20)
+                        .padding(.bottom, 10)
+                        .padding(.top, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(Color("xpress"))
+                        .cornerRadius(10)
+                        .foregroundColor(Color.primary)
+                        .padding()
                     }
-                    .padding(.horizontal)
-                    
-                    
-                    
-                }
+                    .minimumScaleFactor(0.4)
+                    .scaleEffect(achat.quantity > 0 ? 1:0,anchor: UnitPoint.center)
+                    .animation(.spring(), value: achat.quantity)
+                
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment:.top)
+            .frame(maxWidth: size.width, maxHeight: size.height, alignment:.bottom)
+            .padding(.vertical, 50)
+            .animation(.spring(), value: quantity)
             
-            // Add to cart button
-            if quantity > 0{
-                VStack(alignment:.center){
-                    
-                    Button {
-                        //add to cart
-                        Command.current_cart.updateValue(quantity, forKey: _article)
-                    } label: {
-                        Label("Ajouter au panier", systemImage: "shippingbox.circle.fill")
-                            .font(.title)
-                    }
-                    .padding(.bottom, 10)
-                    .padding(.top, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(Color("fond"))
-                    .cornerRadius(30)
-                    .foregroundColor(Color.primary)
+            // Return and cart buttons
+            HStack(alignment: .center, content: {
+                //back button
+                Image(systemName: "chevron.backward")
+                    .foregroundStyle(colorscheme == .dark ? .white : .black)
+                    .shadow(radius: 2)
                     .padding()
-
-                }
-                .frame(maxWidth: .infinity,maxHeight: .infinity, alignment:.bottom)
-                .animation(.spring(), value: quantity)
-            }
+                    .background(.bar)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .onTapGesture {
+                        show_page.toggle()
+                    }
+                Spacer()
+                
+            })
+            .padding(.horizontal, 20)
+            .frame(width: size.width, height: 50, alignment: .bottom)
+            .padding(.top, 70)
             
         }
-        
-        .overlay(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 5).background{
-                Image(systemName: "arrow.backward")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 20)
-            }
-            .clipped()
-            .frame(width: 50, height:50)
-            .onTapGesture {
-                //userdata.Back()
-                show_page = false
-            }
-            .padding(.top,50)
-            .padding(.leading, 30)
-        }
-        .overlay(alignment: .topTrailing) {
-            if !userdata.cart.isEmpty{
-                RoundedRectangle(cornerRadius: 5).background{
-                    Image(systemName: "cart.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20)
-                }
-                .clipped()
-                .frame(width: 50, height:50)
-                .onTapGesture {
-                    //userdata.Back()
-                    show_page = false
-                }
-                .padding(.top,50)
-                .padding(.trailing, 30)
-            }
-            
-        }
-        .background(.ultraThinMaterial)
+        //.background(Color("xpress").opacity(0.2).gradient)
+        .background(.bar)
         .ignoresSafeArea()
         .onAppear{
-            quantity = 0
+            achat.service = article.this
+            achat.quantity = 0
+            if commande.services.contains(where: {$0.service == article.this}){
+                achat.quantity = commande.getQuantityOf(article.this)
+            }
+            
             Task{
-                await userdata.SetDeliveryCost()
+                //await userdata.SetDeliveryCost()
             }
             withAnimation(.spring()){
                 userdata.taskbar = false
@@ -221,7 +213,11 @@ struct ArticleView: View {
 
 struct ArticleView_Previews: PreviewProvider {
     static var previews: some View {
-        ArticleView(_article: Service(), show_page: Binding.constant(true)).environmentObject(UserData())
+        ArticleView(show_page: Binding.constant(true)).environmentObject(UserData())
             .environmentObject(FetchModels())
+            //.environmentObject(Panier())
+            .environmentObject(Article())
+            .environmentObject(Commande())
+            .environmentObject(Alerte())
     }
 }

@@ -9,37 +9,53 @@ import SwiftUI
 
 struct Contacts: View {
     var body: some View {
-        GeometryReader { GeometryProxy in
+        HStack(alignment: .top, spacing:0){
+            Rectangle().fill()
+                .frame(maxWidth: 5, maxHeight: .infinity)
             VStack{
-                Image("logo120")
-                    .clipShape(Circle())
-                    .background{
-                        Circle().fill(.thinMaterial).scaleEffect(1.02)
-                            .shadow(color: .accentColor, radius: 20)
-                    }
-                Text("Leuvensesteenweg 526 1930 Zaventem").foregroundColor(.gray)
-                    .padding()
-                Text("+32 02 420 41 30")
-                    .padding(.bottom,10)
-                Text("info@expressdryclean.be")
-                /*
-                VStack{
-                    Text("""
-Vous souhaitez faire nettoyer à sec  votre chemisier en soie taché ? Vous avez besoin de faire nettoyer vos couettes ou vos couvertures avant le retour de l’hiver ?\nVous désirez faire décaper l’un de vos tapis avant de le remettre en place ?
-    Vous recherchez une blanchisserie  près de Bruxelles ou dans le nord du Brabant-wallon pour lui confier votre linge de maison ou celui de votre famille ?
-    Découvrez les services des experts du linge à Etterbeek, St-Josse, Zaventem et Moortebeek  – Ex-Press Dry Clean.
-
-    Depuis plus de 20 ans, nous sommes à l’écoute des besoins de nos clients particuliers ou professionnels. N’hésitez pas à nous poser toutes vos questions
-""")
-                        .padding()
-                        .textSelection(.enabled)
-                        .multilineTextAlignment(.center)
+                VStack(alignment:.leading){
+                    Text("Leuvensesteenweg 526 1930 Zaventem")
+                        .foregroundColor(.gray)
+                    Text("+32 02 420 41 30")
+                        .padding(.bottom,10)
+                        .onTapGesture {
+                            UIPasteboard.general.string = "+32024204130"
+                        }
+                    Text("info@expressdryclean.be")
+                        .textSelection(EnabledTextSelectability.enabled)
+                    Label("BE0460.715.554", systemImage: "newspaper.fill")
+                }
+               
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem()],alignment:.center, content: {
+                    Label("Confidentialité", systemImage: "safari")
+                        .foregroundStyle(.gray)
+                        .font(.caption2)
+                        .onTapGesture {
+                            let url = URL.init(string: "https://expressdryclean.be/politique-de-confidentialite/")
+                            UIApplication.shared.open((url ?? URL.init(string: "https://expressdryclean.be"))!)
+                        }
                         
-                }*/
-                
-            }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.thinMaterial)
+                    Label("Conditions générales de vente", systemImage: "safari")
+                        .foregroundStyle(.gray)
+                        .font(.caption2)
+                        .multilineTextAlignment(.center)
+                        .onTapGesture {
+                            let url = URL.init(string: "https://expressdryclean.be/conditions-generales-de-vente/")
+                            UIApplication.shared.open(url!)
+                        }
+                })
+            }
+            
+            
         }
+        .background{
+            Rectangle().fill(.bar)
+            Rectangle().fill(.gray.gradient.opacity(0.1))
+        }
+        .padding()
+        
+        
+        .frame(maxWidth: .infinity,alignment: .leading)
         
         // The background should be the 3D express logo
     }

@@ -33,6 +33,18 @@ public func extraData(a:Date) -> [String]{
     
     return date.components(separatedBy: " ")
 }
+///Function to get days of a week depending of the lang :-)
+public func getWeekDays()->[String]{
+    let formatDate = DateFormatter()
+    formatDate.dateFormat = "EE"
+    
+    var result:[String] = Calendar.current.shortStandaloneWeekdaySymbols
+    var r = 1
+    result.removeLast()
+    result.removeFirst()
+    
+    return result
+}
 
 public func getCurrentMonth(currentMonth:Int) -> Date{
     

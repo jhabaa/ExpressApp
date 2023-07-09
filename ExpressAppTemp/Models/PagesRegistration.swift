@@ -19,8 +19,8 @@ struct SignIn_pages{
     var current:PageRegistration?
     var pages:[Int:PageRegistration] = [
         1:.init(introAssetImage: "page 1", title: "Enregistez vous\nChez Express", subTitle: "Pour commencer, choisissez un nom et un mot de passe"),
-        2:.init(introAssetImage: "page 2", title: "Informations de livraison", subTitle: "Inscrivez votre adresse"),
-        3:.init(introAssetImage: "page 3", title: "Informations de contact", subTitle: "Veuillez entrer une adresse mail et un numéro de GSM valide", displaysAction: true)
+        2:.init(introAssetImage: "page 3", title: "Informations de contact", subTitle: "Veuillez entrer une adresse mail et un numéro de GSM valide"),
+        3:.init(introAssetImage: "page 4", title: "Une dernière petite chose", subTitle: "Choisissez un mot de passe", displaysAction: true)
     ]
     init() {
         self.current = self.pages[current_index]!

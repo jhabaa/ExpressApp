@@ -10,6 +10,8 @@ import SwiftUI
 struct Command_modifier: View {
     @EnvironmentObject var fetchmodel:FetchModels
     @EnvironmentObject var userdata : UserData
+    @EnvironmentObject var panier:Panier
+    @EnvironmentObject var article:Article
     @Namespace var namespace : Namespace.ID
     @State var edit_mode:Bool=false
     @State var dateIn:Date=Date()
@@ -97,9 +99,9 @@ struct Command_modifier: View {
                         .datePickerStyle(.compact)
                         .onChange(of: dateIn) { _ in
                             Task{
-                                await fetchmodel.FetchTimes(day:dateIn.mySQLFormat(), type: "in")
+                                //await fetchmodel.FetchTimes(day:dateIn.mySQLFormat(), type: "in")
                                 fetchmodel.command_to_review.enter_date = dateIn.mySQLFormat()
-                                fetchmodel.command_to_review.return_date = fetchmodel.AddDaysToDate(date: dateIn, daysToAdd: userdata.MaxDaysForCard(cart_to_review)).mySQLFormat()
+                                fetchmodel.command_to_review.return_date = fetchmodel.AddDaysToDate(date: dateIn, daysToAdd: panier.daysNeeded()).mySQLFormat()
                             }
                         }
                         Spacer()
@@ -122,7 +124,7 @@ struct Command_modifier: View {
                         DatePicker(
                             "End Date",
                             selection: $dateOut,
-                            in: fetchmodel.AddDaysToDate(date: dateIn, daysToAdd: userdata.MaxDaysForCard(cart_to_review)) ... .distantFuture,
+                            in: fetchmodel.AddDaysToDate(date: dateIn, daysToAdd: panier.daysNeeded()) ... .distantFuture,
                             displayedComponents: [.date]
                             
                         )
@@ -133,7 +135,7 @@ struct Command_modifier: View {
                         .datePickerStyle(.compact)
                         .onChange(of: dateOut) { _ in
                             Task{
-                                await fetchmodel.FetchTimes(day:dateOut.mySQLFormat(), type:"out")
+                                //await fetchmodel.FetchTimes(day:dateOut.mySQLFormat(), type:"out")
                                 
                                 fetchmodel.command_to_review.return_date = dateOut.mySQLFormat()
                             }
@@ -253,9 +255,9 @@ struct Command_modifier: View {
         }
         .onAppear{
             Task{
-                await fetchmodel.FetchServices()
-                print("Cart is current : \(cart_to_review)")
-                print("Cart is current : \(fetchmodel.cart_to_review)")
+                //await fetchmodel.FetchServices()
+               // print("Cart is current : \(cart_to_review)")
+               // print("Cart is current : \(fetchmodel.cart_to_review)")
             }
         }
     }

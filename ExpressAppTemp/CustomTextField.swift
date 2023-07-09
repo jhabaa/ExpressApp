@@ -13,76 +13,75 @@ enum valid_types{
 
 struct CustomTextField: View {
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var utilisateur:Utilisateur
     @EnvironmentObject private var FocusState: focusObjects
+    @Environment(\.colorScheme) var colorScheme
     @Binding var _text:String
-    @State var _element:String
+    @State var _element:String = String()
+    @State var hideMode:Bool = true
     @State var type:valid_types
+    @State var name:String=String()
     var body: some View {
         ZStack{
-            if FocusState.focus_in[_element]! || FocusState.focus_in.allSatisfy({$0.value == false}){
+            if FocusState.focus_in[_element]! || FocusState.focus_in.allSatisfy({$0.value == false} ) || !hideMode{
                 
                     if type == .password{
-                        SecureField(_element, text: $_text)
-                            .multilineTextAlignment(.center)
-                            .font(.title2)
+                       
+                            SecureField(_element, text: $_text)
                             .padding()
-                            .onSubmit {
-                                FocusState.focus_in[_element] = false
-                            }
+                            .multilineTextAlignment(.center)
+                                .onSubmit {
+                                    FocusState.focus_in[_element] = false
+                                }
+                                .background{
+                                    let themeColor:Color = colorScheme == .dark ? .black : .white
+                                    RoundedRectangle(cornerRadius: 10).fill(themeColor.opacity(1))
+                                    RoundedRectangle(cornerRadius: 10).stroke(colorScheme == .dark ? .white : .black, lineWidth: 2)
+                                        .shadow(color: .gray, radius: 20)
+                                }
+        
                     }else
                     if type == .phone{
-                        TextField(_element, text: .init(get: {_text}, set: { num in
-                            // if we have more than 3 characters, we add a space after the third one
-                            var temp:[String] = num.replacingOccurrences(of: " ", with:"").map({String($0)})
+                        
                             
-                            if (temp.count > 3 && temp.count < 17){
-                                temp.insert(" ", at: 4)
-                                if (temp.count > 7){
-                                    temp.insert(" ", at: 7)
-                                }
-                                if (temp.count > 11){
-                                    temp.insert(" ", at: 11)
-                                }
-                                if (temp.count > 13){
-                                    temp.insert(" ", at: 13)
-                                }
-                            }
-                            if (temp.count > 17){
-                                temp.removeLast()
-                            }
-                            
-                            userdata.currentUser.phone = temp.joined()
-                        }))
-                            .multilineTextAlignment(.center)
-                            .font(.title2)
-                            .keyboardType(.phonePad)
+                            TextField(_element, text: $_text)
                             .padding()
-                            .onSubmit {
-                                FocusState.focus_in[_element] = false
-                            }
+                            .multilineTextAlignment(.center)
+                                .onSubmit {
+                                    FocusState.focus_in[_element] = false
+                                }
+                                .background{
+                                    let themeColor:Color = colorScheme == .dark ? .black : .white
+                                    RoundedRectangle(cornerRadius: 10).fill(themeColor.opacity(1))
+                                    RoundedRectangle(cornerRadius: 10).stroke(colorScheme == .dark ? .white : .black, lineWidth: 2)
+                                        .shadow(color: .gray, radius: 20)
+                                }
+                                
+                                
+                        
+                        
+                        
                     }
                     else
                 if type == .text{
-                        TextField(_element, text: .init(get: {_text}, set: { entry in
-                            //for phone number
-                            _text = entry
-                        }))
-                            .multilineTextAlignment(.center)
-                            .font(.title2)
+                            
+                            TextField(_element, text: .init(get: {_text}, set: { entry in
+                                //for phone number
+                                _text = entry
+                            }))
                             .padding()
-                            .onSubmit {
-                                FocusState.focus_in[_element] = false
+                            .multilineTextAlignment(.center)
+                            .background{
+                                let themeColor:Color = colorScheme == .dark ? .black : .white
+                                RoundedRectangle(cornerRadius: 10).fill(themeColor.opacity(1))
+                                RoundedRectangle(cornerRadius: 10).stroke(colorScheme == .dark ? .white : .black, lineWidth: 2)
+                                    .shadow(color: .gray, radius: 20)
                             }
+                        
+                        
                     }
             }
         }
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .topLeading) {
-            Text(_element).font(.caption2)
-                .padding(.leading,20)
-                .opacity(0.5)
-        }
-        .cornerRadius(20)
         .padding(.horizontal)
         .onTapGesture {
             withAnimation(.spring()){
@@ -95,17 +94,18 @@ struct CustomTextField: View {
                     }
                     FocusState.focus_in[_element]?.toggle()
                 }
-                
-                
             }
-            
         }
+        .minimumScaleFactor(0.3)
+        .ignoresSafeArea(.keyboard, edges: Edge.Set.bottom)
         
     }
 }
 
 struct CustomTextField_Previews: PreviewProvider {
     static var previews: some View {
-        CustomTextField(_text: .constant("Username"), _element: "username", type: .password)
+        CustomTextField(_text: .constant("Username"), _element: "utilisateur", type: .phone)
+            .environmentObject(focusObjects())
+            .environmentObject(Utilisateur())
     }
 }

@@ -52,12 +52,19 @@ struct ContentView: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var fetchmodel:FetchModels
     @EnvironmentObject var appSettings:AppSettings
+    @EnvironmentObject var panier:Panier
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var alerte:Alerte
+    @EnvironmentObject var days:Days
     @State var firstViewShowed:Bool = false
     @State private var showSheet1 = false
     @State var home:Bool = true
     @State var person:Bool = false
     @State var cart:Bool = false
     @State var showMenu:Bool = true
+    @State var loading_error:Bool = true
+    @State var connection_error:Bool = true
     var body: some View {
         GeometryReader { GeometryProxy in
             //first screen with animate logo in the background
@@ -66,16 +73,18 @@ struct ContentView: View {
                 // -- not images for all services
                 // -- And the most important, the current ID_user == 0 . 0 is reserved here for empty
             //Background
+            /*
             if (appSettings.show_logo){
                 SceneKitView(scene: SCNScene(named: "SceneKitScene.scn")!)
                             .edgesIgnoringSafeArea(.all)
             }
-            
+            */
             if appSettings.logged{
-                if userdata.currentUser.isAdmin{
+                if utilisateur.this.isAdmin && appSettings.loggedAs == .administrator{
                     AdminView().transition(.identity)
                 }
-                if userdata.currentUser.isUser{
+                
+                if appSettings.loggedAs == .user{
                     UserView().transition(.identity)
                     .overlay(alignment: .bottom) {
                         TaskView()
@@ -91,6 +100,7 @@ struct ContentView: View {
                 }
             }
             //loading if images set is not full
+            /*
             if (!fetchmodel.services_ready){
                 VStack(alignment: .center, spacing: 20) {
                     Text("Chargement")
@@ -98,24 +108,65 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight:.infinity)
                 .background()
-                .onAppear{
-                    Task{
-                        await fetchmodel.FetchServices()
-                    }
-                }
+                
             }
+            */
+            //if network issue
+            
+            //server connection overlay
+            ZStack{
+                LoadingView()
+                    .scaleEffect(y:loading_error ? 1 : 0, anchor: .leading)
+                    .animation(.easeInOut, value: loading_error)
+                Text("Connexion aux serveurs...")
+                    .offset(y:100)
+                    .scaleEffect(y:loading_error ? 1 : 0, anchor: .leading)
+                    .animation(.spring, value: loading_error)
+                
+            }
+            .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .center)
+
             //Notification
             Notification()
+            
+            //AdressSelectorView(Binding.init(projectedValue: .constant(true)))
         }
         .textInputAutocapitalization(.never)
+        
+        //.ignoresSafeArea(.all)
+        /*
         .background{
             LinearGradient(colors: [Color("xpress").opacity(0.7), Color("xpress").opacity(0.0)], startPoint: UnitPoint.bottomTrailing, endPoint: .topLeading)
-                .ignoresSafeArea()
-        }
+                //.ignoresSafeArea()
+        }*/
         //debug
         .onChange(of: appSettings.logged, perform: { newValue in
             print(newValue)
         })
+        .confirmationDialog("Erreur de connexion", isPresented: $appSettings.connection_error) {
+            Button("Réessayer", role: ButtonRole.destructive) {
+                Task{
+                    let handle = Task{
+                        return await article.fetch()
+                    }
+                    appSettings.connection_error = await !handle.value
+                }
+            }
+        }message:{
+            Text("Impossible de se connecter au serveur. Veuillez vérifier votre connection internet")
+        }
+        
+        //.alert("", isPresented: $connection_error, actions: {})
+        .task{
+            let handle = Task{
+                return await article.fetch()
+            }
+            appSettings.connection_error = await !handle.value
+            Task{
+                //alerte.setAlert(await handle.value)
+                loading_error = appSettings.connection_error
+            }
+        }
         
         //Notification
         //loading
@@ -132,5 +183,10 @@ struct ContentView_Previews: PreviewProvider {
         ContentView().environmentObject(UserData())
             .environmentObject(FetchModels())
             .environmentObject(AppSettings())
+            .environmentObject(Panier())
+            .environmentObject(Article())
+            .environmentObject(Utilisateur())
+            .environmentObject(Alerte())
+            .environmentObject(Days())
     }
 }

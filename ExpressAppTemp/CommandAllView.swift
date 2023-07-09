@@ -8,16 +8,25 @@
 //
 
 /**
-            Un click sur une tâche affiche un menu détaillé de la tâche. Une récupération est orange et un retour en vert.
-    La page ManageCommand est alors ouverte.
+ Un click sur une tâche affiche un menu détaillé de la tâche. Une récupération est orange et un retour en vert.
+ La page ManageCommand est alors ouverte.
  */
 
 import SwiftUI
 
+enum DateSelectionMode {
+case unique, range
+}
+
 struct CommandAllView: View {
     @State var selectedDate:Date = Date.init()
     @Namespace var namespace:Namespace.ID
+    @Environment(\.colorScheme) var colorsheme
     @EnvironmentObject var fetchModel : FetchModels
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var daysOff:Days
     @State var commandList:[GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
     @State var selectedCommand:Command = Command.init()
     @State var showDetailCommand:Bool = false
@@ -27,211 +36,209 @@ struct CommandAllView: View {
     @State var currentMonth:Int = 0
     @State var days = ["lun","mar","mer","jeu","ven"]
     @State var commands_per_hour:[Int:[Command]]=[:]
+    @State var WorkToday:Bool=true
+    //Variables to add date as unavailable
+    @State var startDate:Date = "2000/01/01".toDate()
+    @State var endDate:Date = "2000/01/01".toDate()
+    @State var selectDaysOff:Bool = false
+    @State private var dates: Set<DateComponents> = []
+    @State var daysSelectorView:Bool = false
+    @State var DateUniqueSelector:Bool = false
+    @State var datesBis:Set<DateComponents>=[]
     var body: some View {
         GeometryReader { GeometryProxy in
             let size = GeometryProxy.size
             let minY = GeometryProxy.frame(in: .named("calendar")).minY
             List {
-                
-                    CalendarPart()
-                        .offset(y:minY < 0 ? -minY : 0)
-                        .edgesIgnoringSafeArea(.all)
-                        .padding(0)
-                        .listRowSeparator(Visibility.hidden)
+                /*
+                 CalendarPart(size)
+                 
+                 
+                 .padding(0)
+                 .listRowSeparator(Visibility.hidden)
+                 */
                 
                 Section() {
-                    ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
-                        
-                        Section {
-                            VStack {
-                                ForEach(commands_per_hour[hour]!, id: \.self) { com in
-                                    //Guess if it's get day or not
-                                    let state:Bool = com.enter_date == selectedDate.mySQLFormat() ? true : false
-                                    
-                                    //command card
-                                    VStack(alignment:.leading ,spacing:5){
-                                        HStack {
-                                            HStack{
-                                                Text("\(fetchModel.GetUser_by_ID(id: com.user!).surname)")
-                                                    .monospacedDigit()
-                                                    .font(.title3.bold())
-                                                Text("\(fetchModel.GetUser_by_ID(id: com.user!).name)")
-                                                    .monospacedDigit()
-                                                    .font(.title2)
-                                            }
-                                            Spacer()
-                                            
+                    if WorkToday{
+                        if (selectDaysOff){
+                            // If no commands I can show the menu to add or del days off
+                            Section{
+                                HStack{
+                                    if (!startDate.isEqualTo("2000/01/01")){
+                                        Text("\(!endDate.isEqualTo("2000/01/01") ? "DU" : "LE")")
+                                        VStack{
+                                            Text("\(startDate.month)")
+                                                .font(.custom("Gotham-Black", size: 20))
+                                                .bold()
+                                            Text("\(startDate.day)")
+                                                .font(.custom("Ubuntu", size: 20))
                                         }
-                                        .padding(.vertical, 5)
-                                        
-                                        Text("\(state ? "Récupérer":"Déposer") commande # \(com.id)")
-                                            .font(.caption)
-                                            .opacity(0.7)
-                                        
-                                        HStack{
-                                            VStack{
-                                                Text("\(com.infos)")
-                                            }
-                                            Spacer()
-                                            //Prix
-                                            Text(com.cost.formatted(.currency(code:"eur")))
-                                        }
-                                        .padding(.horizontal)
+                                        .padding()
+                                        .background(.ultraThinMaterial)
                                     }
-                                    .frame(height:100)
-                                    .background(state ? .blue.opacity(0.2) : Color.red.opacity(0.2))
-                                    //.shadow(radius: 1)
                                     
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .shadow(radius: 3)
-                                    //.ignoresSafeArea(.horizontal)
-                                    .padding(.horizontal)
-                                    .onTapGesture {
-                                        //To the trick : lets open the command interface
-                                        selectedCommand = com
-                                        showDetailCommand.toggle()
+                                    
+                                    if (!endDate.isEqualTo("2000/01/01")){
+                                        Text("AU")
+                                        VStack{
+                                            Text("\(endDate.month)")
+                                                .font(.custom("Gotham-Black", size: 20))
+                                                .bold()
+                                            Text("\(endDate.day)")
+                                                .font(.custom("Ubuntu", size: 20))
+                                        }
+                                        .padding()
+                                        .background(.ultraThinMaterial)
                                     }
                                 }
+                                .padding()
+                                
+                                //Validate Button
+                                if (!startDate.isEqualTo("2000/01/01") && endDate.isEqualTo("2000/01/01")){
+                                    Button("Valider"){
+                                        Task{
+                                            let r = await daysOff.push(startDate)
+                                            print(r)
+                                            if r{
+                                                startDate = "2000/01/01".toDate()
+                                                endDate = "2000/01/01".toDate()
+                                            }
+                                            //update
+                                            _ = await daysOff.Retrieve_daysOff()
+                                        }
+                                        selectDaysOff = false
+                                        
+                                    }
+                                }
+                                
+                                if (startDate < endDate){
+                                    Button("Valider"){
+                                        Task{
+                                            for d in startDate.datesTil(endDate){
+                                                let r = await daysOff.push(d)
+                                            }
+                                            
+                                            //update
+                                            await daysOff.Retrieve_daysOff()
+                                        }
+                                        selectDaysOff = false
+                                        
+                                    }
+                                }
+                                
+                                
                             }
-                            
-                            //.background(.ultraThinMaterial)
-                            .clipShape(RoundedRectangle(cornerRadius: 30))
-                            .ignoresSafeArea(edges: .horizontal)
-                        } header: {
-                            Text("\(hour)h")
+                        }else{
+                            ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
+                                
+                                Section {
+                                    VStack {
+                                        ForEach(commands_per_hour[hour]!, id: \.self) { com in
+                                            //Guess if it's get day or not
+                                            let state:Bool = com.enter_date == selectedDate.mySQLFormat() ? true : false
+                                            
+                                            //command card
+                                            HStack{
+                                                //marker
+                                                Rectangle().fill(!state ? .red : .blue)
+                                                    .frame(maxWidth:5, maxHeight:.infinity)
+                                                // Month and adress
+                                                VStack{
+                                                    Text("\(selectedDate.month)")
+                                                        .font(.custom("Gotham-Black", size: 20))
+                                                        .bold()
+                                                    Text("\(selectedDate.day)")
+                                                        .font(.custom("Ubuntu", size: 20))
+                                                }
+                                                .padding()
+                                                .frame(height: 80)
+                                                .background(.ultraThinMaterial)
+                                                .padding(.trailing, 10)
+                                                
+                                                
+                                                HStack{
+                                                    //icons
+                                                    if !state{
+                                                        Image(systemName: "arrow.up.circle.fill")
+                                                        
+                                                    }else{
+                                                        Image(systemName: "arrow.down.circle.fill")
+                                                    }
+                                                    
+                                                    VStack(alignment:.leading){
+                                                        Text("\(utilisateur.userWithId(com.user!).surname) \(utilisateur.userWithId(com.user!).name)")
+                                                            .font(.custom("Gotham-Black", size: 20))
+                                                        Text("\(utilisateur.userWithId(com.user!).adress)")
+                                                            .font(.custom("Gotham-Black", size: 15))
+                                                        Text("\(!state ? "Livrer" : "Récupérer")")
+                                                            .font(.custom("Gotham-Black", size: 10))
+                                                            .padding(3)
+                                                            .background(!state ? .red : .blue)
+                                                            .clipShape(Capsule())
+                                                    }
+                                                }
+                                                .padding()
+                                                .frame(height: 80)
+                                                .background(.thinMaterial)
+                                            }
+                                            
+                                            
+                                            .onTapGesture {
+                                                //To the trick : lets open the command interface
+                                                //selectedCommand = com
+                                                commande.services = commande.ReadCommand_List(list: com.services_quantity, article: article).services
+                                                commande.editMode(com)
+                                            }
+                                        }
+                                    }
+                                    
+                                    
+                                    .ignoresSafeArea(edges: .horizontal)
+                                } header: {
+                                    if !commands_per_hour[hour]!.isEmpty{
+                                        Text("\(hour)h")
+                                    }
+                                    
+                                }
+                            }
                         }
-                       
                         
+                    }else{
+                        VStack{
+                            Image(systemName: "exclamationmark.octagon.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 50)
+                                .foregroundStyle(.red)
+                            
+                            Text("Ce jour est férié")
+                                .font(.caption)
+                            
+                        }
                         
-                       
+                        .frame(maxWidth: .infinity, alignment:.center)
+                        .padding()
+                        .background(.bar)
                     }
+                    
                 }header:{
+                    //Calendrier
+                    CalendarPart(size)
                     Text(
                         "Programme du \(selectedDate.dateUserfriendly())"
                     )
                     .padding(.top, 50)
                 }
                 
-                
             }
+            
             .listStyle(.inset)
+            .listRowBackground(Rectangle().fill(.red))
             .ignoresSafeArea(.all)
             .edgesIgnoringSafeArea(.all)
-           /* ZStack(alignment:.top){
-                    
-                List {
-                    
-                }
-                /*ScrollView(showsIndicators:false){
-                    VStack(spacing:10){
-                            
-                            
-                            //Maintennant nous affichons les jours du mois
-                        LazyVGrid(columns: [GridItem(.fixed(30)), GridItem(.flexible())]) {
-                            ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
-                                
-                                VStack{
-                                    Text("\(hour)h")
-                                        .offset(y:-10)
-                                    Spacer()
-                                }
-                                .padding(.horizontal)
-                                
-                                
-                                VStack {
-                                    Divider()
-                                        .offset(y:-20)
-                                    ForEach(commands_per_hour[hour]!, id: \.self) { com in
-                                        //Guess if it's get day or not
-                                        let state:Bool = com.enter_date == selectedDate.mySQLFormat() ? true : false
-                                        
-                                        VStack(alignment:.leading ,spacing:5){
-                                            HStack {
-                                                HStack{
-                                                    Text("\(fetchModel.GetUser_by_ID(id: com.user!).surname)")
-                                                        .monospacedDigit()
-                                                        .font(.title3.bold())
-                                                    Text("\(fetchModel.GetUser_by_ID(id: com.user!).name)")
-                                                        .monospacedDigit()
-                                                        .font(.title2)
-                                                }
-                                                Spacer()
-                                                
-                                                Menu {
-                                                    
-                                                } label: {
-                                                    Image(systemName: "ellipsis")
-                                                }
-                                            }
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 5)
-                                            
-                                            Text("\(state ? "Récupérer":"Déposer") commande # \(com.id)")
-                                                .font(.caption)
-                                                .opacity(0.7)
-                                                .padding(.horizontal)
-                                            
-                                            HStack{
-                                                if state{
-                                                    Text("\(com.enter_time)H - \(Int(com.enter_time)! + 1)H ")
-                                                        .padding(.horizontal)
-                                                        .opacity(0.7)
-                                                    
-                                                }else{
-                                                    Text("\(com.return_time)H - \(Int(com.return_time)! + 1)H ")
-                                                        .padding(.horizontal)
-                                                        .opacity(0.7)
-                                                }
-                                                Spacer()
-                                                Image("user1")
-                                                    .resizable()
-                                                    .frame(width:30)
-                                                    .clipShape(Circle())
-                                            }
-                                            .padding(.horizontal)
-                                        }
-                                        .frame(height:100)
-                                        .background(state ? .blue.opacity(0.2) : Color.red.opacity(0.2))
-                                        //.shadow(radius: 1)
-                                        
-                                        .clipShape(RoundedRectangle(cornerRadius: 30))
-                                        //.ignoresSafeArea(.horizontal)
-                                        .padding(.horizontal)
-                                        .onTapGesture {
-                                            //To the trick : lets open the command interface
-                                            selectedCommand = com
-                                            showDetailCommand.toggle()
-                                        }
-                                    }
-                                }
-                                .frame(minHeight: 100, alignment: SwiftUI.Alignment.center)
-                                //.background(.ultraThinMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 30))
-                                .ignoresSafeArea(edges: .horizontal)
-                               
-                            }
-                            
-                        }
-                        .padding(.top, 350)
-                            
-                            
-                        }
-                    
-                }*/
-                .background(.ultraThinMaterial)
-                .zIndex(1)
-                
-                .coordinateSpace(name: "calendar")
-                            .onChange(of: currentMonth) { newValue in
-                                //Mise à jour du mois
-                                withAnimation(.spring()) {
-                                    currentDate = getCurrentMonth(currentMonth: currentMonth)
-                                }
-                                
-                            }
-            }*/
             .edgesIgnoringSafeArea(.all)
-            .background(LinearGradient(colors: [Color("xpress").opacity(1),Color("fond").opacity(0.0)], startPoint: .top, endPoint: .center))
+            
+            
             .onChange(of: currentMonth) { newValue in
                 //Mise à jour du mois
                 withAnimation(.spring()) {
@@ -242,143 +249,257 @@ struct CommandAllView: View {
             .onChange(of: minY) { V in
                 print(minY)
             }
-            if showDetailCommand{
-                CommandDetailView(userdata: _userdata, show_this: $showDetailCommand, _command: selectedCommand)
+            if commande.edit{
+                CommandDetailView(userdata: _userdata)
             }
             
+            
+            //MARK: Days selector View
+            //Days off add sheet
+            VStack{
+                Toggle(DateUniqueSelector ? "Selection individuelles" : "Plage de dates", systemImage: "finger", isOn: $DateUniqueSelector)
+                    .toggleStyle(.button)
+                    .tint(.clear)
+                    .foregroundStyle(.gray)
+                MultiDatePicker("", selection: $dates )
+                    .onChange(of: dates) { V in
+                        print(dates.min(by: {$0.date! < $1.date!}))
+                    }
+                
+                Button {
+                    //MARK: Set dates as daysoff
+                    if DateUniqueSelector{
+                        dates.forEach { DateComponents in
+                            Task{
+                                await daysOff.push(DateComponents.date!)
+                            }
+                        }
+                    }
+                    else{
+                        //Valid all between the min and the max selected date
+                        let d1 = dates.min(by: {$0.date! < $1.date!})!.date //Find the minimum date
+                        let d2 = dates.max(by: {$0.date! < $1.date!})!.date //Find the maximum date
+                        for d in d1!.datesTil(d2!){
+                            Task{
+                                _ = await daysOff.push(d) //Foreach date between min and max, push it
+                            }
+                            
+                        }
+                    }
+                    //update
+                    Task{
+                        await daysOff.Retrieve_daysOff()
+                    }
+                    
+                    
+                } label: {
+                    Text("Ajouter ces dates")
+                        .frame(maxWidth: .infinity)
+                }
+                .padding()
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity, maxHeight:550, alignment:.leading)
+            .background(.bar)
+            .overlay(alignment: .topTrailing) {
+                //MARK: Button to hide the days selector view
+                Button {
+                    withAnimation {
+                        daysSelectorView.toggle()
+                    }
+                } label: {
+                    Image(systemName: "xmark.square.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40)
+                        .padding(.horizontal)
+                }
+
+            }
+            .offset(y: daysSelectorView ? 0 : -1000)
+            .animation(.spring, value: daysSelectorView)
         }
         
         .background(.ultraThinMaterial)
-        
-        
         .onAppear{
             Task{
-                fetchModel.fetchCommands()
-                fetchModel.fetchUsers()
-                commands_per_hour = fetchModel.Commands_Hours_Dict(date: selectedDate)
+                commande.fetch()
+                utilisateur.fetch()
+                commands_per_hour = commande.Commands_Hours_Dict(date: selectedDate)
+                _ = await daysOff.Retrieve_daysOff()
             }
-           
+            
             
         }
         
+        
     }
+    @State var deleteDayOff:Bool = false
     @ViewBuilder
-    public func CalendarPart() -> some View{
-            //let size = $0.size
+    public func CalendarPart(_ size:CGSize) -> some View{
+        //let size = $0.size
+        
+        
         VStack(){
-                let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-
+            let cols = [GridItem(.fixed(50)), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+            
+            
+            //Calendar
+            LazyVGrid(columns:cols, pinnedViews:PinnedScrollableViews.sectionHeaders) {
                 
-                //Calendar
-                LazyVGrid(columns:cols, pinnedViews:PinnedScrollableViews.sectionHeaders) {
+                Section {
                     
-                    Section {
-                        ForEach(days, id: \.self) { day in
-                            Text(day)
-                        }
-                        ForEach(extractDates(currentMonth: currentMonth)){value in
-                                //CadView(value: value)
-                            if (value.day == -1){
-                                Text("").disabled(false)
-                            }else{
-                                VStack{
-                                    Text("\(value.day)")
-                                        .monospacedDigit()
-                                        .padding(5)
-                                        .frame(width:50)
-                                        .background(value.date == selectedDate ? .black : .blue.opacity(0))
-                                        // Lets set a fixed size
-                                        
-                                        
-                                        .foregroundColor(value.date == selectedDate ? .white : .primary)
-                                        .clipShape(Circle())
-                                        .overlay(alignment: .center) {
-                                            ZStack{
-                                                if (fetchModel.Mission_ToDay(date: value.date)){
-                                                    Circle().stroke(LinearGradient(colors: [.blue, .clear], startPoint:.leading, endPoint: .trailing))
-                                                        
-                                                }
-                                                if (fetchModel.Mission_Back_ToDay(date: value.date)){
-                                                    Circle().stroke(LinearGradient(colors: [.red, .clear], startPoint:.trailing, endPoint: .leading))
-                                                }
-                                                
-                                            }
+                    ForEach(days, id: \.self) { day in
+                        Text(day)
+                    }
+                    
+                    ForEach(extractDates(currentMonth: currentMonth)){value in
+                        //CadView(value: value)
+                        if (value.day == -1){
+                            Text("")
+                            // .disabled(false)
+                        }else{
+                            ZStack{
+                                Text("\(value.day)")
+                                    .monospacedDigit()
+                                    .padding(5)
+                                    .frame(width:50)
+                                    .background(value.date == selectedDate ? .blue : .blue.opacity(0))
+                                // Lets set a fixed size
+                                
+                                
+                                //.foregroundColor(value.date == selectedDate ? .white : .primary)
+                                    .foregroundColor(daysOff.isNoWorkDay(value.date) ? .red : value.date == selectedDate ? .white : .primary)
+                                    .clipShape(Circle())
+                                    .onTapGesture(count: 2, perform: {
+                                        Task{
+                                            let _=await daysOff.remove(value.date)
+                                            let _ = await daysOff.Retrieve_daysOff()
                                         }
+                                        
+                                    })
+                                    .overlay(alignment: .center) {
+                                        ZStack{
+                                            if (commande.getToday(value.date)){
+                                                Circle().stroke(LinearGradient(colors: [.blue, .clear], startPoint:.leading, endPoint: .trailing))
+                                            }
+                                            if (commande.returnToday(value.date)){
+                                                Circle().stroke(LinearGradient(colors: [.red, .clear], startPoint:.trailing, endPoint: .leading))
+                                            }
+                                            if(value.date >= startDate && value.date <= endDate && selectDaysOff){
+                                                RoundedRectangle(cornerRadius: 20, style: .continuous).fill(.blue.opacity(0.1))
+                                            }
+                                            
+                                        }
+                                    }
+                                
+                                
+                            }
+                            .onTapGesture {
+                                withAnimation(.spring()) {
+                                    
+                                    if (!selectDaysOff){
+                                        WorkToday = !daysOff.isNoWorkDay(value.date)
+                                        selectedDate = value.date
+                                        
+                                        commands_per_hour = commande.Commands_Hours_Dict(date: selectedDate)
+                                    }else{
+                                        // If the selected option is enable, just fill the first date. if another date is pressed fille the second one
+                                        if (value.date < endDate || startDate.isEqualTo("2000/01/01")){
+                                            //add to start date
+                                            startDate = value.date
+                                        }
+                                        else{
+                                            endDate = value.date
+                                        }
+                                    }
                                     
                                 }
                                 
-                                    .onTapGesture {
-                                        withAnimation(.spring()) {
-                                            selectedDate = value.date
-                                        
-                                            commands_per_hour = fetchModel.Commands_Hours_Dict(date: selectedDate)
-                                        }
-                                        
-                                        print(selectedDate)
-                                    }
+                                print(selectedDate)
                             }
-                                
                             
-                                
-                     //   }
+                            
                         }
-                    } header: {
-                        //Mois et année
-                            HStack{
-                                //Bouton du mois précédent
-                                
-                                Image(systemName: "chevron.left")
-                                    .foregroundColor(.blue)
-                                    .frame(width:30)
-                                    .scaledToFit()
-                                    .clipped()
-                                    .onTapGesture {
-                                        withAnimation(.easeInOut) {
-                                        currentMonth -= 1
-                                    }
-                                }
-                                Spacer()
-                                //Month and year
-                                HStack(alignment:.center){
-                                   
-                                    Text(extraData(a: currentDate)[1]).font(.title2.bold())
-                                    Text(extraData(a: currentDate)[0])
-                                        .fontWeight(.semibold)
-                                }.padding(.horizontal)
-                                    .background(Color("xpress"))
-                                    .containerShape(RoundedRectangle(cornerRadius: 30))
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.blue)
-                                    .frame(width:30)
-                                    .scaledToFill()
-                                    .clipped()
-                                    .onTapGesture {
-                                    withAnimation(.spring()) {
-                                        currentMonth += 1
-                                        getCurrentMonth(currentMonth: currentMonth)
-                                    }
-                                }
-                                
-                            }.frame(maxWidth: .infinity, alignment: SwiftUI.Alignment.center)
-                            .padding(.horizontal)
-                        //
+                        //   }
+                    }
+                } header: {
+                    //Mois et année
+                    HStack{
+                        
+                        Spacer()
+                        Button("Ajouter congés"){
+                            withAnimation (.easeInOut){
+                                daysSelectorView.toggle()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
                         
                     }
-
-                            
+                    .padding(.horizontal)
+                    .frame(maxWidth:.infinity,alignment: .leading)
+                    .overlay(alignment: .bottomLeading) {
+                        Text(extraData(a: currentDate)[0])
+                            .font(.title)
+                            .padding(.leading)
+                            .foregroundStyle(colorsheme == .dark ? .white : .black, Color("xpress"))
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.leading)
+                    }
                     
+                    
+                    
+                    HStack{
+                        //Bouton du mois précédent
                         
+                        Text(getCurrentMonth(currentMonth: currentMonth-1).monthfull
+                        )
+                        .font(.title2)
+                        .minimumScaleFactor(0.2)
+                        .lineLimit(1)
+                        .onTapGesture {
+                            withAnimation(.spring()) {
+                                currentMonth -= 1
+                            }
+                        }
+                        Spacer()
+                        //Month and year
+                        HStack(alignment:.center){
+                            
+                            Text(extraData(a: currentDate)[1]).font(.title.bold())
+                                .foregroundStyle(colorsheme == .dark ? .white : .black, Color("xpress"))
+                                .opacity(1)
+                                .minimumScaleFactor(0.4)
+                                .lineLimit(1)
+                            
+                        }.padding(.horizontal)
+                        
+                            .containerShape(RoundedRectangle(cornerRadius: 30))
+                        Spacer()
+                        Text(getCurrentMonth(currentMonth: currentMonth+1).monthfull)
+                            .font(.title2)
+                            .minimumScaleFactor(0.2)
+                            .lineLimit(1)
+                            .onTapGesture {
+                                withAnimation(.spring()) {
+                                    currentMonth += 1
+                                    getCurrentMonth(currentMonth: currentMonth)
+                                }
+                            }
+                        
+                    }.frame(maxWidth: size.width, alignment: SwiftUI.Alignment.center)
+                        .padding()
+                    //
+                    
                 }
-                .padding(.vertical)
-                .frame(maxWidth: .infinity, alignment: SwiftUI.Alignment.top)
-                .padding(.top, 50)
-                
-                
-               
             }
-            .background(.ultraThinMaterial)
-            .cornerRadius(60)
+            //.padding(.vertical)
+            .ignoresSafeArea(.all)
+            .frame(width:size.width, alignment: SwiftUI.Alignment.top)
+            .padding(.top, 50)
+        }
+        
     }
     
     @ViewBuilder
@@ -403,15 +524,13 @@ struct CommandAllView: View {
                     .foregroundColor(.white)
                 }
                 else{
-                    
-                    
                     VStack{
                         Text(value.day.formatted()).scaledToFit()
                             .padding()
                             .background(.white)
                             .clipShape(Circle())
                             .animation(.easeInOut, value: value.date)
-                            //.padding(10)
+                        //.padding(10)
                         
                         Text(value.date.formatted(date: Foundation.Date.FormatStyle.DateStyle.complete, time: .omitted).prefix(3)).foregroundColor(.blue).padding([.bottom])
                             .animation(.easeInOut, value: value.date)
@@ -421,17 +540,15 @@ struct CommandAllView: View {
                     .foregroundColor(.blue)
                 }
                 //introduire le code pour vérifier si la date est libre dans la DB
-                    
             }
         }
     }
 }
-//fonction qui recupère le jour en lettre d'une date
+///fonction qui recupère le jour en lettre d'une date
 func getDay(date:Date) -> String{
     var result:String = ""
     result = String(date.formatted(date: .complete, time: .omitted).split(separator: ",")[0])
     return result
-    
 }
 
 struct Previews_CommandAllView_Previews: PreviewProvider {
@@ -439,5 +556,9 @@ struct Previews_CommandAllView_Previews: PreviewProvider {
         CommandAllView()
             .environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Utilisateur())
+            .environmentObject(Commande())
+            .environmentObject(Article())
+            .environmentObject(Days())
     }
 }

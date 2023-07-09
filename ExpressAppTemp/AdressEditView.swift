@@ -9,38 +9,48 @@ import SwiftUI
 
 struct AdressEditView: View {
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var commande:Commande
     @StateObject var focusState = focusObjects()
     @State var is_valid:Bool=false
-    @State var _adress:[String]=["","","","",""]
+    @State var street:String=String()
+    @State var number:String=String()
+    @State var sup:String=String()
+    @State var postal:String=String()
+    @State var city:String=String()
     @Binding var _show:Bool
     var body: some View {
         GeometryReader {
-            _ in
+            let size = $0.size
             //back button
-            Button("Annuler") {
-                withAnimation(.spring()){
-                    _show.toggle()
+            VStack{
+                Button("Annuler") {
+                    withAnimation(.spring()){
+                        _show.toggle()
+                    }
                 }
+                .padding()
+                .buttonStyle(.borderedProminent)
             }
-            .padding(.top, 50)
-            .padding(.horizontal)
+            .frame(width:size.width, height: 40, alignment:.leading)
+            .background(.bar)
+            
             ScrollView{
                     Text("Changement d'adresse")
                     .font(.headline)
-                CustomTextField(_text: $_adress[0], _element: "road", type: .text)
+                CustomTextField(_text: $street, _element: "rue", type: .text)
                 HStack{
-                    CustomTextField(_text: $_adress[1], _element: "number", type: .text)
-                    CustomTextField(_text: $_adress[2], _element: "sup", type: .text)
+                    CustomTextField(_text: $number, _element: "numero", type: .text)
+                    CustomTextField(_text: $sup, _element: "supplement", type: .text)
                 }
                     
-                CustomTextField(_text: $_adress[3], _element: "postal code", type: .text)
-                CustomTextField(_text: $_adress[4], _element: "city", type: .text)
-                    .onAppear{is_valid =  userdata.currentUser.readAdress(_adress)}
+                CustomTextField(_text: $postal, _element: "code postal", type: .text)
+                CustomTextField(_text: $city, _element: "ville", type: .text)
                     
                    //if adress is correct 
                 if is_valid{
                     Button("Enregistrer") {
-                        userdata.currentCommand.infos = _adress.joined(separator: " ").lowercased().replacingOccurrences(of: "  ", with: " ")
+                        commande.this.infos = "Adresse de récupération \([street, number, sup, postal, city].joined(separator: " "))"
                     }
                     .buttonBorderShape(.capsule)
                     .buttonStyle(.bordered)
@@ -56,11 +66,17 @@ struct AdressEditView: View {
                     }
                 }
             }
-            .padding(.top, 100)
-            
+            .padding(.top, 50)
                 //.onAppear{is_valid =  userdata.currentUser.readAdress(_adress)}
         }
-        .background(.ultraThinMaterial)
+        .onChange(of: [street, number, sup, postal, city] , perform: { value in
+            is_valid = utilisateur.this.readAdress([street, number, sup, postal, city])
+        })
+
+        .onAppear(perform: {
+            (street, number, sup, postal, city) = utilisateur.this.get_adress_datas()
+        })
+        .background(.bar)
         .environmentObject(focusState)
     }
 }
@@ -68,5 +84,6 @@ struct AdressEditView: View {
 struct AdressEditView_Previews: PreviewProvider {
     static var previews: some View {
         AdressEditView(_show: .constant(true)).environmentObject(UserData())
+            .environmentObject(Commande())
     }
 }

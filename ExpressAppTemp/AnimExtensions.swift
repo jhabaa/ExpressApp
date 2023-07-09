@@ -31,7 +31,10 @@ extension Animation{
         Animation.linear(duration: 0.2)
             .delay(4)
     }
-    
+    static func pulse() -> Animation{
+        Animation.spring(response:1, blendDuration: 2).repeatForever(autoreverses: true)
+            .speed(0.4)
+    }
     static func up() -> Animation{
         Animation.linear(duration: 0.1)
             

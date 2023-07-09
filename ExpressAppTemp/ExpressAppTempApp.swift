@@ -12,13 +12,27 @@ struct ExpressAppTempApp: App {
  
     var body: some Scene {
         WindowGroup {
-            let userdata = UserData()
-            let fetchmodels = FetchModels()
-            let settings = AppSettings()
+            var userdata = UserData()
+            var fetchmodels = FetchModels()
+            var settings = AppSettings()
+            var panier = Panier()
+            let article = Article()
+            var coupon = Coupons()
+            let utilisateur = Utilisateur()
+            let commande = Commande()
+            let alerte = Alerte()
+            let days = Days()
             ContentView()
                 .environmentObject(userdata)
                 .environmentObject(fetchmodels)
                 .environmentObject(settings)
+                .environmentObject(panier)
+                .environmentObject(article)
+                .environmentObject(utilisateur)
+                .environmentObject(coupon)
+                .environmentObject(commande)
+                .environmentObject(alerte)
+                .environmentObject(days)
                 .onAppear {
                     /*
                     UserData.load { result in

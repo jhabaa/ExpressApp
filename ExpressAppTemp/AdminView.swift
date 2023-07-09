@@ -9,8 +9,14 @@ import SwiftUI
 
 struct AdminView: View {
     @Namespace var namespace : Namespace.ID
-    @EnvironmentObject var fetchmodel : FetchModels
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var days:Days
+    @EnvironmentObject var coupon:Coupons
+    
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var alerte:Alerte
     //@Binding var showMenu:Bool
     @State  var searchEntry:String = ""
     @State var EditPage:Bool = true
@@ -21,7 +27,7 @@ struct AdminView: View {
     @State var allOpions:Bool = false
     @State var homePage:Bool = true
     @State var couponPage:Bool = false
-    @Environment(\.presentationMode) var presentationMode
+    //@Environment(\.presentationMode) var presentationMode
     @State var gridLayout: [GridItem] = [ GridItem(.flexible()), GridItem(.flexible())]
     @State var userMenu:[String]=["Add User","Delete User","Update User"]
     @State var adminMenu:[String]=["Add Admin","Delete Admin","Update Admin"]
@@ -40,6 +46,9 @@ struct AdminView: View {
                 .tabItem {
                     Label("Users", systemImage: "person.fill")
                 }
+                .onAppear(perform: {
+                    utilisateur.fetch()
+                })
                 
             
             ServicesAllView()
@@ -50,26 +59,27 @@ struct AdminView: View {
             CouponsView()
                 .tabItem {
                     Label("Promos", systemImage: "button.programmable")
-                        
                 }
                 .tint(.blue)
+               
             _SettingsView()
                 .tabItem{
-                    Label("Reglages", systemImage: "gearshape")
+                    Label("Reglages", systemImage: "gear")
                 }
-            
+            /*
+            DateManagementView()
+                .tabItem{
+                    Label("Calendrier", systemImage: "calendar")
+                }
+            */
         }
-        .tabViewStyle(.automatic)
-        .tint(.green)
+        
+        .tint(Color("xpress"))
+
 
     }
     .background(.linearGradient(colors: [.clear.opacity(0),.blue.opacity(0.3),.blue.opacity(0.4)], startPoint: UnitPoint.topLeading, endPoint: UnitPoint.bottomTrailing))
-    .onAppear{
-        Task{
-           // await fetchmodel.FetchServices()
-        }
-        
-    }
+    
 
     }
 }
@@ -78,7 +88,13 @@ struct AdminView: View {
 
 struct Previews_AdminView_Previews: PreviewProvider {
     static var previews: some View {
-        AdminView().environmentObject(UserData())
-            .environmentObject(FetchModels())
+        AdminView()
+            .environmentObject(UserData())
+            .environmentObject(Utilisateur())
+            .environmentObject(Commande())
+            .environmentObject(Days())
+            .environmentObject(Coupons())
+            .environmentObject(Alerte())
+            .environmentObject(Article())
     }
 }

@@ -10,122 +10,148 @@ import SwiftUI
 struct Command_confirmation: View {
     @EnvironmentObject var fetchmodel : FetchModels
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var article:Article
     @Namespace var namespace : Namespace.ID
-    @Binding var _command_id:Int
     var body: some View {
-        GeometryReader { _ in
-            VStack{
-                Text("Confirmation de commande")
-                    .font(.title3).bold()
-                Text("#\(_command_id)")
-                    .foregroundColor(.gray)
-                    .padding(.bottom, 20)
-                Spacer()
-                Image(systemName: "checkmark.circle")
-                    .resizable()
-                    .foregroundColor(.green)
-                    .scaledToFit()
-                    .frame(width: 100)
-                    .clipped()
-                Text("Commande Confirmée")
-                    .font(.title)
-                    .bold()
-                List {
+        GeometryReader {
+            let size = $0.size
+            
+            // List of elements
+            ScrollView{
                     Section {
-                        ForEach(Command.current_cart.keys.sorted(by: {$0.time < $1.time}), id: \.self) {
-                            service in
-                            withAnimation(.spring()){
-                                HStack{
-                                    AsyncImage(url: URL(string: "http://\(urlServer):\(urlPort)/getimage?name=\(service.name)") , content: { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .clipShape(Circle())
-                                            .frame(width: 70, height: 70)
-                                    }, placeholder: {
-                                        ProgressView()
-                                            .scaledToFill()
-                                            .clipped()
-                                            .frame(width: 100)
-                                            .cornerRadius(20)
-                                            .padding()
-                                    })
-                                    .matchedGeometryEffect(id: "\(service.name)", in: namespace)
-                                    VStack(alignment: .leading, spacing: 10){
-                                        //Infos d'article
-                                        Text("\(service.name)")
-                                            .font(.title2).bold()
-                                        Text("\(service.categories)")
-                                            .font(.callout)
-                                        //prix unitaire
-                                        Text("\((service.cost).formatted(.currency(code: "EUR")))").font(.title3).bold()
-                                    }
-                                }
-                                .shadow(radius: 10)
-                                .badge(
-                                    "QTE:\(Command.current_cart[service] ?? 0)"
-                                )
+                        //Exemple shape
+                        /*
+                        HStack(alignment:.center){
+                            // Image of the service
+                           Image("logo120")
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 25.5))
+                                .frame(width: 100, height: 100)
+                                .shadow(radius: 1)
+                            
+                            //Name of the servive and quantity up and downdable
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Nom du service")
+                                    .bold()
                             }
-                        }
-                    } header: {
-                        //Thanks
-                        Text("Merci de faire appel à nos services. Nous avons envoyé une confirmation à votre adresse mail : \(userdata.currentUser.mail)")
-                            .multilineTextAlignment(.leading)
+                            Spacer()
+                            //Cost
+                            ZStack{
+                                Text("\((0.23).formatted(.currency(code: "EUR")))").font(.title3).bold()
+                                Text("Quantité : ")
+                                    .font(.caption2)
+                                    .offset(y:20)
+                            }
                             .padding(.horizontal)
-                        
-                        //Estimation récup
-                        var recupDate = Date()
-                        HStack{
-                            Image(systemName: "shippingbox.fill")
-                                .foregroundColor(.accentColor)
-                            Text("Récupération estimée :\(recupDate.dateUserfriendly())")
-                                .foregroundColor(.accentColor).bold()
+                                
                         }
-                        .onAppear{
-                            Task{
-                                recupDate = userdata.currentCommand.enter_date.toDate()
+                        .background(.bar)
+                        .clipShape(RoundedRectangle(cornerRadius: 25.5))
+                        .padding(.horizontal)
+                        */
+                        //Divider()
+                        ForEach(commande.services.sorted(by: {$0.service.id < $1.service.id}), id: \.self) { s in
+                            // Entry of the cart
+                            HStack(alignment:.center){
+                                // Image of the service
+                                Image(uiImage: (article.images[s.service.illustration] ?? UIImage(named: "logo120"))!)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .clipShape(RoundedRectangle(cornerRadius: 25.5))
+                                    .frame(width: 100, height: 100)
+                                    .shadow(radius: 1)
+                                
+                                //Name of the servive and quantity up and downdable
+                                VStack(alignment: .leading, spacing: 20) {
+                                    Text(s.service.name)
+                                        .bold()
+                                }
+                                Spacer()
+                                //Cost
+                                ZStack{
+                                    Text("\((s.price).formatted(.currency(code: "EUR")))").font(.title3).bold()
+                                    Text("Quantité : \(s.quantity)")
+                                        .font(.caption2)
+                                        .offset(y:20)
+                                }
+                                .padding(.horizontal)
+                                
                             }
+                            .background(.bar)
+                            .clipShape(RoundedRectangle(cornerRadius: 25.5))
+                            .padding(.horizontal)
                         }
-                        .padding()
-                        Spacer()
-                        Text("Articles")
-                            .font(.title2).bold()
-                            .multilineTextAlignment(.leading)
                     }
-                footer:{
-                    Divider()
-                        .padding(.bottom, 150)
+                    .padding(.top,300)
+                
+            }
+            
+            VStack{
+                VStack{
+                    Text("Confirmation de commande")
+                        .font(.title3).bold()
+                    Text("#\(commande.this.id)")
+                        .foregroundColor(.blue)
+                        .padding(.bottom, 20)
+                    Image(systemName: "checkmark.circle")
+                        .resizable()
+                        .foregroundColor(.blue)
+                        .scaledToFit()
+                        .frame(width: 100)
+                        .clipped()
+                    Text("Commande Confirmée")
+                        .font(.title)
+                        .bold()
                 }
-                }
-                .listStyle(.grouped)
-                .background(.ultraThinMaterial)
-            }.frame(alignment: .center)
-                .presentationDetents([.large])
-                .overlay(alignment:.bottom){
-                    Button {
-                        //Checkout action
-                        userdata.command_confirmation = false
-                        Command.current_cart = [:]
-                        Task{
-                            userdata.GoToPage(goto: "accueil")
-                        }
-                    } label: {
-                        Text("Continuer")
-                            .font(.custom("Ubuntu", size: 30))
-                            .frame(width: 300)
+                .padding()
+                .background(Color("xpress").opacity(0.5).gradient)
+                .clipShape(RoundedRectangle(cornerRadius: 25.0))
+            }
+            .frame(width: size.width, alignment: .center)
+            
+            
+            
+            // Continue Button
+            VStack{
+                
+                Button {
+                    //Checkout action
+                    //userdata.command_confirmation = false
+                    //Command.current_cart = [:]
+                    commande.confirmed = false
+                    Task{
+                        userdata.GoToPage(goto: "accueil")
                     }
-                    //.frame(width: .width, height: size.height, alignment: .bottom)
-                    .buttonStyle(.borderedProminent)
-                    .padding()
+                } label: {
+                    Text("Continuer")
+                        .font(.custom("Ubuntu", size: 30))
+                        .frame(width: 300)
                 }
+                //.frame(width: .width, height: size.height, alignment: .bottom)
+                .buttonBorderShape(.capsule)
+                .buttonStyle(.borderedProminent)
+                .padding()
+                .shadow(radius: 2)
+            }
+            .frame(width:size.width,height: size.height, alignment: .bottom)
+            
         }
+        .frame(alignment: .center)
+        .background(Color("xpress").opacity(0.2).gradient)
+        .background(.bar)
     }
 }
 
 
 struct Command_confirmation_Previews: PreviewProvider {
     static var previews: some View {
-        Command_confirmation(_command_id:Binding(projectedValue: .constant(124574))).environmentObject(UserData())
+        Command_confirmation().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Article())
+            .environmentObject(Commande())
+            .environmentObject(Utilisateur())
     }
 }

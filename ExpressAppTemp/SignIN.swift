@@ -6,40 +6,66 @@
 //
 
 import SwiftUI
+import MapKit
 enum user_field{
     case username, password, v_password
 }
 
+enum BelgianCity{
+    case Bruxelles, Flandre, Wallonie , unset
+}
+
+struct IdentifiablePlace: Identifiable {
+    let id: UUID
+    let location: CLLocationCoordinate2D
+    init(id: UUID = UUID(), lat: Double, long: Double) {
+        self.id = id
+        self.location = CLLocationCoordinate2D(
+            latitude: lat,
+            longitude: long)
+    }
+}
+
 struct SignIN: View {
+    @Namespace var namespace
     @EnvironmentObject var fetchModels:FetchModels
     @StateObject private var focusState = focusObjects()
+    @EnvironmentObject var utilisateur:Utilisateur
     @State private var page:SignIn_pages = SignIn_pages()
     @EnvironmentObject var userdata:UserData
     @State var v_password:String = String()
-    //@FocusState private var user_focus:user_field?
-    @State var _adress:[String]=["","","","",""]
     @Binding var _show:Bool
     @State var is_valid:Bool = false
+    @State var primary_infos:Bool=false
+    @State var adress_entry_view:Bool = false
     var body: some View {
         GeometryReader { _ in
             //Fond d'écran
             ZStack (alignment: .center, content: {
-                Rectangle().fill(.linearGradient(colors: [Color("fond").opacity(0),
-                                                          Color("fond").opacity(0.1),
-                                                          Color("fond").opacity(0.3),
-                                                          Color("fond").opacity(0.5),
-                                                          Color("fond").opacity(0.7),
-                                                          Color("fond").opacity(1),]
-                                                 , startPoint: .top, endPoint: .bottom)).colorInvert()
+                Rectangle().fill(.clear).colorInvert()
                 
             })
-            .background{
-                Image(page.current!.introAssetImage)
-                    .resizable()
-                    .scaledToFill()
-                    
-            }
-            .ignoresSafeArea()
+            .background(.bar)
+            .background(
+                ZStack(content: {
+                    Circle()
+                        .fill(Color("xpress"))
+                        .blur(radius: 70)
+                        .offset(x:100,y:300)
+                        
+                        .animation(.pulse(), value: true)
+                    Rectangle()
+                        .fill(.green)
+                        .blur(radius: 60)
+                        .frame(width: 100, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/)
+                        .offset(x: -100, y: -200)
+                })
+                //Image(page.current!.introAssetImage)
+                   // .resizable()
+                    //.scaledToFill()
+                
+            )
+            .ignoresSafeArea(.keyboard)
             .onTapGesture {
                 //return all to false first
                 withAnimation(.spring()){
@@ -48,51 +74,100 @@ struct SignIN: View {
                     }
                 }
             }
-            //return or prev
-            Text(page.current_index == 1 ? "Annuler" : "Retour")
-                .underline()
-                .padding()
-                .onTapGesture {
-                    withAnimation(.spring()){
-                        if page.current_index == 1{
-                            userdata.currentUser = User()
-                            _show = false
-                        }else{
-                            page.prev()
+            
+            //Adress view
+            if primary_infos{
+                AdressSelectorView(show: $_show)
+            }else{
+                ScrollView{
+                    ExpressLogo()
+                        .scaleEffect(1.3)
+                        .animation(.spring(), value: _show)
+                        .matchedGeometryEffect(id: "logo", in: namespace)
+                        
+                    Text(page.this.title)
+                        .font(.system(size: 40))
+                        .fontWeight(.bold)
+                        .padding(.top)
+                        .minimumScaleFactor(0.4)
+                        
+                    Text(page.this.subTitle)
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    if page.current_index==1{
+                        CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
+                            .padding(.horizontal)
+                            
+                        CustomTextField(_text: $utilisateur.this.surname, _element: "prenom",hideMode:false,type:.text, name:"Prenom d'utilisateur")
+                            .padding()
+                        
+                        Spacer()
+                        //Next Button
+                        validationBtn(utilisateur.this.name.isEmpty)
+                    }
+                    
+                    
+                    
+                    if page.current_index==2{
+                        CustomTextField(_text: $utilisateur.this.phone, _element: "gsm",hideMode:false, type: .phone)
+                        CustomTextField(_text: $utilisateur.this.mail, _element: "email",hideMode:false,type:.text, name:"@Email")
+                            .textCase(.lowercase)
+                            .textContentType(.emailAddress)
+                        validationBtn((!utilisateur.this.isMailIsCorrect && !utilisateur.this.isValidBelgianGSM))
+                    }
+                    
+                    if page.current_index == 3{
+                        CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe",hideMode:false,type:.password, name:"Mot de passe")
+                        CustomTextField(_text: $v_password, _element: "v-mot de passe",hideMode:false,type:.password, name:"Entrez à nouveau")
+                        
+                         validationBtn(!(utilisateur.this.password == v_password && !utilisateur.this.password.isEmpty))
+                    }
+                        
+                   
+                    
+                }
+                
+                .ignoresSafeArea(.keyboard)
+                
+                //return or prev
+                Text(page.current_index == 1 ? "Annuler" : "Retour")
+                    .underline()
+                    .padding()
+                    .onTapGesture {
+                        withAnimation(.spring()){
+                            if page.current_index == 1{
+                                //Annuler
+                                //userdata.currentUser = User()
+                                utilisateur.this = User()
+                                _show = false
+                            }else{
+                                page.prev()
+                            }
                         }
                     }
-                }
-            VStack{
-                Text(page.this.title)
-                    .font(.system(size: 40))
-                    .fontWeight(.bold)
-                    .padding(.top, 50)
-                Text(page.this.subTitle)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                
-                if page.current_index==1{
-                    CustomTextField(_text: $userdata.currentUser.name, _element: "username",type:.text)
-                    CustomTextField(_text: $userdata.currentUser.surname, _element: "surname",type:.text)
-                    CustomTextField(_text: $userdata.currentUser.password, _element: "password",type:.password)
-                    CustomTextField(_text: $v_password, _element: "v_password",type:.password)
-                }
-                
-                if page.current_index==2{
-                    CustomTextField(_text: $_adress[0], _element: "road",type:.text)
-                    CustomTextField(_text: $_adress[1], _element: "number",type:.text)
-                    CustomTextField(_text: $_adress[2], _element: "sup",type:.text)
-                    CustomTextField(_text: $_adress[3], _element: "postal code",type:.text)
-                    CustomTextField(_text: $_adress[4], _element: "city",type:.text)
-                    .onAppear{is_valid =  userdata.currentUser.readAdress(_adress)}
-                }
-                
-                if page.current_index==3{
-                    CustomTextField(_text: $userdata.currentUser.phone, _element: "phone", type: .phone)
-                    CustomTextField(_text: $userdata.currentUser.mail, _element: "email",type:.text)
-                }
-                
-                Spacer()
+            }
+            
+        }
+        .autocorrectionDisabled()
+        .environmentObject(focusState)
+        //On change
+        
+        .onAppear {
+            utilisateur.this = User()
+        }
+        
+        
+    }
+    @State var place: IdentifiablePlace = .init(lat: 50, long: 50)
+    @State var loading:Bool = false
+    
+    //validation Button
+    @ViewBuilder
+    func validationBtn(_ hide:Bool? = true, _ last:Bool? = false) -> some View{
+        GeometryReader {
+            var s = $0.size
+            VStack(alignment:.center){
                 Button {
                     //return all to false first
                     focusState.focus_in.forEach { (key: String, value: Bool) in
@@ -110,19 +185,19 @@ struct SignIN: View {
                             do{
                                 userdata.loading = true
                                 DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(2)){}
-                                var r = !(await userdata.Register())
-                                DispatchQueue.main.async {
-                                    _show = r
-                                }
-                                await fetchModels.FetchServices()
+                                primary_infos = (await utilisateur.register())
+                                
+                                print("Primary infos \(primary_infos)")
+                                
+                                //await fetchModels.FetchServices()
                                 userdata.loading = false
 
-                                await userdata.Retrieve_commands(userdata.currentUser)
+                                //await userdata.Retrieve_commands(userdata.currentUser)
                                 
-                                
+                                /*
                                 await UserData.save(user: userdata.currentUser, completion: {_ in
                                 })
-                                
+                                */
                             }catch{
                                 print("Erreur d'ajout utilisateur")
                             }
@@ -137,29 +212,25 @@ struct SignIN: View {
                             .padding()
                     }
                 }
+                .frame(width: .infinity)
                 .buttonStyle(.borderedProminent)
                 .tint(Color("xpress"))
-                .disabled(!is_valid)
-                
+                .disabled((hide ?? false))
             }
+            .frame(width: s.width)
+            .scaleEffect(hide ?? true ? 0 : 1)
+            
+            .animation(.spring, value: hide)
         }
-        .environmentObject(focusState)
-        //On change
-        .onChange(of: _adress) { _ in
-            is_valid = userdata.currentUser.readAdress(_adress)
-        }
-        .onChange(of: v_password) { V in
-            is_valid = userdata.currentUser.password == v_password && !userdata.currentUser.name.isEmpty
-        }
-        .onChange(of: userdata.currentUser.mail) { _ in
-            is_valid = userdata.CheckEmail()
-        }
+        
     }
+        
         
 }
 
 struct SignIN_Previews: PreviewProvider {
     static var previews: some View {
-        SignIN( _show: .constant(true)).environmentObject(UserData())
+        SignIN( _show: .constant(true), place: IdentifiablePlace(lat: 50.7069, long: 4.37539)).environmentObject(UserData())
+            .environmentObject(Utilisateur())
     }
 }

@@ -11,6 +11,9 @@ import MapKit
 struct UserDetailView: View {
     @EnvironmentObject var fetchmodel:FetchModels
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var utilisateur:Utilisateur
+    @Environment(\.presentationMode) var presentation
+    @State var userToReview:User=User()
     @State var modifyMode:Bool = false
     @Namespace var namespace : Namespace.ID
     @StateObject private var focusState = focusObjects()
@@ -24,44 +27,75 @@ struct UserDetailView: View {
     
     //=====================
     @State var orignal_user:User=User()
-    @State var review_this:User
-    @State var adress:[String]=["","","","",""]
+    @State var road=String()
+    @State var number=String()
+    @State var supplement=String()
+    @State var postal=String()
+    @State var city=String()
     @State var is_valid:Bool = false
     var body: some View {
     // Name and surname
     ScrollView{
-        Text(review_this.name).font(.custom("Coffeeandcrafts", size: 50, relativeTo: .largeTitle))
-        Text(review_this.surname)
-        if userdata.currentUser.isAdmin{
-            Text("@\(review_this.id)").font(.caption2).foregroundColor(.gray)
+        Image("user")
+            .resizable()
+            .scaledToFit()
+            
+            .colorInvert()
+            .background(.black)
+            .padding()
+            .frame(width: 100)
+
+        Text(utilisateur.review.name)
+            .font(.custom("Coffeeandcrafts", size: 50, relativeTo: .largeTitle))
+            .lineLimit(2)
+            .minimumScaleFactor(0.4)
+        
+        Text(utilisateur.review.surname)
+            .lineLimit(2)
+            .minimumScaleFactor(0.4)
+        
+        if utilisateur.this.isAdmin{
+            Text("@\(utilisateur.review.id)").font(.caption2).foregroundColor(.gray)
         }
         
-        CustomTextField(_text: $review_this.mail, _element: "email",type:.text)
+        CustomTextField(_text: $utilisateur.review.mail, _element: "email",type:.text)
                 .shadow(radius: 2)
-                .padding(.vertical, 30)
-            CustomTextField(_text: $review_this.phone, _element: "phone", type: .phone)
+                .padding(.vertical, 10)
+                
+        CustomTextField(_text: $utilisateur.review.phone, _element: "gsm", type: .phone)
                 .shadow(radius: 2)
 
         
         //Adress part
-        Text("Adresse actuelle : \n\(review_this.adress)")
-            .font(.caption)
-            .foregroundColor(.gray)
+        Label("Adresse actuelle : \n\(utilisateur.review.adress)", systemImage: "location")
+            .font(.callout)
+            .padding()
+            .lineLimit(3)
+            .minimumScaleFactor(0.4)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(radius: 3)
+            .padding(.top, 10)
+        
         DisclosureGroup {
             //adress modifier
             
-            CustomTextField(_text: $adress[0], _element: "road", type:.text)
-            CustomTextField(_text: $adress[1], _element: "number", type:.text)
-            CustomTextField(_text: $adress[2], _element: "sup", type:.text)
-            CustomTextField(_text: $adress[3], _element: "postal code", type:.text)
-            CustomTextField(_text: $adress[4], _element: "city", type:.text)
-            .onAppear{is_valid =  review_this.readAdress(adress)}
+            CustomTextField(_text: $road, _element: "rue", type:.text)
+            HStack{
+                CustomTextField(_text: $number, _element: "numero", type:.text)
+                CustomTextField(_text: $supplement, _element: "supplement", type:.text)
+            }
+            
+            CustomTextField(_text: $postal, _element: "code postal", type:.text)
+            CustomTextField(_text: $city, _element: "ville", type:.text)
         } label: {
-            Text("Nouvelle adresse")
-                .padding()
-                .foregroundColor(Color.primary)
-                .background(.ultraThinMaterial)
-                .cornerRadius(5)
+                Text("Nouvelle adresse")
+                    .padding()
+                    .foregroundColor(Color.primary)
+                    .background(Color("xpress"))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(30)
+                    .multilineTextAlignment(.center)
         }
         .padding(.horizontal)
 
@@ -69,10 +103,14 @@ struct UserDetailView: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     .environmentObject(focusState)
     .autocorrectionDisabled(true)
-    .onChange(of: adress) { _ in
-        print(adress)
-        is_valid = review_this.readAdress(adress)
-        print(is_valid)
+    .onChange(of: [city, road, supplement, number, postal]) { _ in
+        var response = utilisateur.review.readAdress([road,number,supplement,postal, city])
+        
+        if response{
+            utilisateur.review.adress = [road,number,supplement,postal, city].joined(separator: " ").lowercased().replacingOccurrences(of: "  ", with: " ")
+        }
+        //is_valid = review_this.readAdress(adress)
+        //print(is_valid)
     }
     .onTapGesture {
         //return all to false first
@@ -83,21 +121,29 @@ struct UserDetailView: View {
         }
     }
     .onAppear{
-        // Create copy of the actual user
-        orignal_user = review_this
-        is_valid = true
+        if utilisateur.this.isUser{
+            utilisateur.review = utilisateur.this
+        }else{
+            utilisateur.review = userToReview
+        }
+        (road,number,supplement, postal, city) = utilisateur.review.get_adress_datas()
+        
+        //is_valid = true
     }
     .toolbar {
-        if (is_valid && orignal_user != review_this){
+        
+        if (utilisateur.review.readAdress([road,number,supplement,postal,city]) ){
             Button {
                 //Edit button
                 //toggle
                 let handle = Task {
-                    return await review_this.update()
+                    return await utilisateur.review.update()
                 }
-                if (userdata.currentUser.isUser){
-                    userdata.currentUser = review_this
+                if (utilisateur.this.isUser){
+                    utilisateur.this = utilisateur.review
                 }
+                
+                presentation.wrappedValue.dismiss()
             } label: {
                 Text("Enregistrer")
                     .padding(5)
@@ -217,7 +263,8 @@ struct UserDetailView: View {
 
 struct Previews_UserDetailView_Previews: PreviewProvider {
     static var previews: some View {
-        UserDetailView(review_this: User(name: "John")).environmentObject(UserData())
+        UserDetailView().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Utilisateur())
     }
 }
