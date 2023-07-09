@@ -12,6 +12,7 @@ import MapKit
 struct UserAllView: View {
     @EnvironmentObject var userData : UserData
     @EnvironmentObject var fetchModel:FetchModels
+    @EnvironmentObject var utilisateur:Utilisateur
     @State var selectedUser:User = User()
     @State private var moreInfos:Bool = false
     @State var searchText:String=String.init()
@@ -28,9 +29,9 @@ struct UserAllView: View {
             NavigationView {
                 List(){
                     Section{
-                        ForEach(fetchModel.users, id: \.self){ u in
+                        ForEach(utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){ u in
                             NavigationLink {
-                                UserDetailView(review_this: u)
+                                UserDetailView(userToReview: u)
                             } label: {
                                 HStack{
                                     VStack{
@@ -99,10 +100,11 @@ struct UserAllView: View {
                         .padding(.top, 50)
                         //Resultats de recherches. La fonction est locale recherche les noms
                         
-                            if fetchModel.SortUsers(a: searchText).count != 0{
+                        if !searchText.isEmpty{
                                 withAnimation {
                                     Section{
-                                        ForEach (fetchModel.SortUsers(a: searchText), id: \.self){ index in
+                                        ForEach (utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){ index in
+                                            if(index.name.capitalized.contains(searchText)){
                                                 HStack{
                                                     AsyncImage(url: URL(string: "http://\(urlServer):\(urlPort)/getimage?name=\(index.name)") , content: { image in
                                                         image.resizable().scaledToFill()
@@ -121,12 +123,10 @@ struct UserAllView: View {
                                                             Text("#\(index.id.formatted())").font(.caption)
                                                             Spacer()
                                                         }
-                                                        
                                                     }
-                                                    
-                                                    
                                                     Spacer()
                                                 }
+                                            }
                                         }
                                     } header: {
                                         Text("Resultats de recherche")
@@ -146,12 +146,14 @@ struct UserAllView: View {
             //.ignoresSafeArea(.top)
             .background(.ultraThinMaterial)
             .listStyle(.inset)
+            /*
             .fullScreenCover(isPresented: $moreInfos) {
-                UserDetailView(review_this: selectedUser)
-            }
+                UserDetailView()
+            }*/
         }
         .onAppear{
-            fetchModel.fetchUsers()
+            utilisateur.fetch()
+            
         }
     }
 }
@@ -160,5 +162,6 @@ struct UserAllView_Previews: PreviewProvider {
     static var previews: some View {
         UserAllView().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Utilisateur())
     }
 }

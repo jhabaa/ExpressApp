@@ -53,7 +53,7 @@ struct AddServiceView: View {
                             //fetchModel.PushService(service: service, state: &saveResult)
                             print("saved")
                         Task{
-                            await fetchModel.FetchServices()
+                            //await fetchModel.FetchServices()
                         }
                         
                         

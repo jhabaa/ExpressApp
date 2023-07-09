@@ -9,17 +9,20 @@ import SwiftUI
 
 struct CouponsView: View {
     @EnvironmentObject var fetchmodel:FetchModels
-    @State var _coupon:Coupon=Coupon()
+    @EnvironmentObject var coupon:Coupons
+   
     var body: some View {
         VStack{
             List {
                 Section {
                     HStack{
-                        TextField(text: $_coupon.code) {
+                        TextField(text: .init(get: {
+                            coupon.this.code
+                        }, set: { new in
+                            coupon.this.code = new.uppercased()
+                        })) {
                             Text("Code")
-                                
                         }
-                        
                         .textCase(.uppercase)
                         .padding()
                         .frame(maxWidth: 150)
@@ -27,7 +30,7 @@ struct CouponsView: View {
                         .clipShape(Capsule())
                         
                         //Coupon value
-                        TextField(value: $_coupon.discount, format: .currency(code: "")) {
+                        TextField(value: $coupon.this.discount, format: .currency(code: "")) {
                             Text("Valeur")
                         }
                         .keyboardType(.decimalPad)
@@ -42,13 +45,11 @@ struct CouponsView: View {
                             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                             //Add coupon
                             Task{
-                                if await (fetchmodel.Add_Coupon(_coupon)){
-                                    _coupon = Coupon()
+                                if await (coupon.this.Add_Coupon()){
+                                    coupon.clean()
                                 }
-                                try await fetchmodel.Retrieve_Coupons()
+                                try await coupon.Retrieve_Coupons()
                             }
-                            
-                            
                         }
                         .buttonBorderShape(.capsule)
                         .buttonStyle(.borderedProminent)
@@ -56,48 +57,38 @@ struct CouponsView: View {
                 } header: {
                     VStack{
                         Text("Vous pouvez ajouter un nouveau coupon ici. Il suffit de mentionner le montant et le code et de valider. Les coupons ne peuvent pas être modifiés une fois créés")
-                        
                     }
-                    
                 }
                 
                 Section {
-                    ForEach(fetchmodel.all_coupons, id: \.self) { coupon in
+                    ForEach(coupon.all, id: \.self) { c in
                         HStack{
-                            Text("\(coupon.code)")
+                            Text("\(c.code)")
                         }
                         .frame(height: 50)
-                        .badge("\(coupon.discount.formatted(.currency(code: "EUR")))")
+                        .badge("\(c.discount.formatted(.currency(code: "EUR")))")
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                
                                 Button(role:.destructive) {
                                     //Delete coupon
                                     Task{
-                                        await fetchmodel.Delete_Coupon(coupon)
+                                        await c.Delete_Coupon()
                                     }
                                 } label: {
                                     Label("Supprimer", systemImage: "trash")
                                 }
                                 .tint(.red)
-
                             }
-                        
                     }
                 } header: {
                     Text("Coupons en cours")
                 }
-
-                
-                
             }
         }
         .onAppear{
             Task{
-                try await fetchmodel.Retrieve_Coupons()
+                try await coupon.Retrieve_Coupons()
             }
         }
-        
-        
     }
 }
 
@@ -105,5 +96,6 @@ struct CouponsView_Previews: PreviewProvider {
     static var previews: some View {
         CouponsView()
             .environmentObject(FetchModels())
+            .environmentObject(Coupons())
     }
 }

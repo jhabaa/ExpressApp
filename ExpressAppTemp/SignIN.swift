@@ -13,6 +13,7 @@ enum user_field{
 struct SignIN: View {
     @EnvironmentObject var fetchModels:FetchModels
     @StateObject private var focusState = focusObjects()
+    @EnvironmentObject var utilisateur:Utilisateur
     @State private var page:SignIn_pages = SignIn_pages()
     @EnvironmentObject var userdata:UserData
     @State var v_password:String = String()
@@ -37,7 +38,6 @@ struct SignIN: View {
                 Image(page.current!.introAssetImage)
                     .resizable()
                     .scaledToFill()
-                    
             }
             .ignoresSafeArea()
             .onTapGesture {
@@ -55,7 +55,8 @@ struct SignIN: View {
                 .onTapGesture {
                     withAnimation(.spring()){
                         if page.current_index == 1{
-                            userdata.currentUser = User()
+                            //userdata.currentUser = User()
+                            utilisateur.this = User()
                             _show = false
                         }else{
                             page.prev()
@@ -72,9 +73,9 @@ struct SignIN: View {
                     .foregroundColor(.gray)
                 
                 if page.current_index==1{
-                    CustomTextField(_text: $userdata.currentUser.name, _element: "username",type:.text)
-                    CustomTextField(_text: $userdata.currentUser.surname, _element: "surname",type:.text)
-                    CustomTextField(_text: $userdata.currentUser.password, _element: "password",type:.password)
+                    CustomTextField(_text: $utilisateur.this.name, _element: "username",type:.text)
+                    CustomTextField(_text: $utilisateur.this.surname, _element: "surname",type:.text)
+                    CustomTextField(_text: $utilisateur.this.password, _element: "password",type:.password)
                     CustomTextField(_text: $v_password, _element: "v_password",type:.password)
                 }
                 
@@ -84,12 +85,12 @@ struct SignIN: View {
                     CustomTextField(_text: $_adress[2], _element: "sup",type:.text)
                     CustomTextField(_text: $_adress[3], _element: "postal code",type:.text)
                     CustomTextField(_text: $_adress[4], _element: "city",type:.text)
-                    .onAppear{is_valid =  userdata.currentUser.readAdress(_adress)}
+                    .onAppear{is_valid =  utilisateur.this.readAdress(_adress)}
                 }
                 
                 if page.current_index==3{
-                    CustomTextField(_text: $userdata.currentUser.phone, _element: "phone", type: .phone)
-                    CustomTextField(_text: $userdata.currentUser.mail, _element: "email",type:.text)
+                    CustomTextField(_text: $utilisateur.this.phone, _element: "phone", type: .phone)
+                    CustomTextField(_text: $utilisateur.this.mail, _element: "email",type:.text)
                 }
                 
                 Spacer()
@@ -110,19 +111,19 @@ struct SignIN: View {
                             do{
                                 userdata.loading = true
                                 DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(2)){}
-                                var r = !(await userdata.Register())
+                                let r = !(await utilisateur.register())
                                 DispatchQueue.main.async {
                                     _show = r
                                 }
-                                await fetchModels.FetchServices()
+                                //await fetchModels.FetchServices()
                                 userdata.loading = false
 
-                                await userdata.Retrieve_commands(userdata.currentUser)
+                                //await userdata.Retrieve_commands(userdata.currentUser)
                                 
-                                
+                                /*
                                 await UserData.save(user: userdata.currentUser, completion: {_ in
                                 })
-                                
+                                */
                             }catch{
                                 print("Erreur d'ajout utilisateur")
                             }
@@ -146,20 +147,25 @@ struct SignIN: View {
         .environmentObject(focusState)
         //On change
         .onChange(of: _adress) { _ in
-            is_valid = userdata.currentUser.readAdress(_adress)
+            is_valid = utilisateur.this.readAdress(_adress)
         }
         .onChange(of: v_password) { V in
-            is_valid = userdata.currentUser.password == v_password && !userdata.currentUser.name.isEmpty
+            is_valid = utilisateur.this.password == v_password && !utilisateur.this.name.isEmpty
         }
-        .onChange(of: userdata.currentUser.mail) { _ in
-            is_valid = userdata.CheckEmail()
+        .onChange(of: utilisateur.this.mail) { _ in
+            is_valid = utilisateur.this.isMailIsCorrect
+        }
+        .onAppear {
+            utilisateur.this = User()
         }
     }
+        
         
 }
 
 struct SignIN_Previews: PreviewProvider {
     static var previews: some View {
         SignIN( _show: .constant(true)).environmentObject(UserData())
+            .environmentObject(Utilisateur())
     }
 }

@@ -12,8 +12,11 @@ import SwiftUI
 struct Cart: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var fetchmodel : FetchModels
-    @State var promoCode:String=String()
-    @State var coupon_value:String=String()
+    @EnvironmentObject var panier:Panier
+    @EnvironmentObject var coupon:Coupons
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var article:Article
+    @EnvironmentObject var utilisateur:Utilisateur
     @State var confirmation:Bool=false
     @State var cartPage:Int=0
     @State var datePage:Int=1
@@ -25,12 +28,11 @@ struct Cart: View {
             VStack{
                 List{
                     Section {
-                        ForEach(Command.current_cart.keys.sorted(by: {$0.time < $1.time}), id: \.self) {
-                            service in
+                        ForEach(commande.services.sorted(by: {$0.service.id < $1.service.id}), id: \.self) { s in
                             // Entry of the cart
                             HStack(alignment:.bottom){
                                 // Image of the service
-                                Image(uiImage: (fetchmodel.services_Images[service.name] ?? UIImage(named: "logo120"))!)
+                                Image(uiImage: (article.images[s.service.illustration] ?? UIImage(named: "logo120"))!)
                                     .resizable()
                                     .frame(width: 60, height: 60)
                                     .scaledToFit()
@@ -39,41 +41,32 @@ struct Cart: View {
                                 
                                 //Name of the servive and quantity up and downdable
                                 VStack(alignment: .leading, spacing: 20) {
-                                    Text(service.name)
+                                    Text(s.service.name)
                                         .bold()
                                     
                                     //quantity and buttons
                                     HStack(alignment: .bottom, spacing: 10) {
                                         Image(systemName: "minus.circle")
                                             .onTapGesture {
-                                                userdata.currentCommand.decrease_in_cart(service)
-                                                update_value.toggle()
-                                                update_value.toggle()
+                                                commande.decrease(s)
                                             }
                                         
                                         //quantity
-                                        if update_value{
-                                            Text("\(Command.current_cart[service]!)")
-                                        }
-                                        
-                                        
+                                        Text("\(s.quantity)")
                                         Image(systemName: "plus.circle")
                                             .onTapGesture {
-                                                userdata.currentCommand.increase_in_cart(service)
-                                                update_value.toggle()
-                                                update_value.toggle()
+                                                commande.increase(s)
                                             }
-                                        
                                     }
                                 }
                                 Spacer()
                                 //Cost
-                                Text("\((service.cost * Decimal(Command.current_cart[service]!)).formatted(.currency(code: "EUR")))").font(.title3).bold()
+                                Text("\((s.price).formatted(.currency(code: "EUR")))").font(.title3).bold()
                             }
                             //Swipe action
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
-                                    
+                                    commande.remove(s)
                                 } label: {
                                     VStack{
                                         Image(systemName: "trash.fill")
@@ -94,33 +87,41 @@ struct Cart: View {
                     }
                 header: {
                     HStack{
-                        TextField("Coupon", text: $promoCode)
+                        TextField("Coupon", text: .init(get: {
+                            coupon.this.code
+                        }, set: { Value in
+                            coupon.this.code = Value
+                        }))
                             .textCase(.uppercase)
                             .autocapitalization(UIKit.UITextAutocapitalizationType.allCharacters)
-                            .padding(.horizontal)
+                            .padding()
+                            .background(Color("xpress").opacity(0.3).gradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 40))
+                            
                         
-
                         Button{
                             Task{
-                                coupon_value = await userdata.Check_Coupon(Coupon(promoCode, Decimal(0.00)))
+                                commande.this.discount = await coupon.this.Check_Coupon()
                             }
                         }label: {
                             Text("Appliquer")
                                 .font(.caption)
+                                .padding(7)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(Color.primary)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color("xpress").gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: 40))
                     }
                     .padding(.vertical)
-                    .background(.thickMaterial)
                     .shadow(radius: 1)
-                    .clipShape(RoundedRectangle(cornerRadius: 40))
+                    
                 }
                 footer: {
                     //If promocode is correct
                     HStack{
-                        if !coupon_value.isEmpty{
-                            Label("\(coupon_value)", systemImage: "checkmark.circle")
+                        if (coupon.this.discount != Decimal()){
+                            
+                            Label(coupon.this.discount.formatted(.currency(code:"eur")), systemImage: "checkmark.circle")
                                 .foregroundColor(.green)
                                 .font(.caption)
                                 .padding(.horizontal)
@@ -148,7 +149,7 @@ struct Cart: View {
                             Text("Sous-Total")
                             Spacer()
                             //Text(userdata.currentCommand.sub_total.formatted(.currency(code:"EUR")))
-                            Text(userdata.currentCommand.get_sub_total.formatted(.currency(code: "EUR")))
+                            Text(commande.getCost.formatted(.currency(code: "EUR")))
                                .bold()
                         }
                         .padding(.horizontal)
@@ -157,7 +158,7 @@ struct Cart: View {
                         HStack(alignment: .center) {
                             Text("Frais livraison")
                             Spacer()
-                            Text(userdata.currentCommand.delivery.formatted(.currency(code: "EUR")))
+                            Text(commande.this.delivery.formatted(.currency(code: "EUR")))
                                 .bold()
                         }
                         .padding(.horizontal)
@@ -166,7 +167,7 @@ struct Cart: View {
                         HStack(alignment: .center) {
                             Text("Reduction")
                             Spacer()
-                            Text(userdata.currentCommand.discount.formatted(.currency(code: "EUR")))
+                            Text(coupon.this.discount.formatted(.currency(code: "EUR")))
                                 .bold()
                         }
                         .padding(.horizontal)
@@ -177,27 +178,48 @@ struct Cart: View {
                     HStack(alignment: .center) {
                         Text("Total")
                         Spacer()
-                        Text(userdata.Get_Cost_command().formatted(.currency(code: "EUR")))
+                        Text(commande.TotalCost.formatted(.currency(code: "EUR")))
                             .bold()
                     }
                     .bold()
                     .padding(.horizontal)
                     .padding(.bottom, 80)
                 }
-                .background(.ultraThinMaterial)
+                
             }
+            .padding()
+            .background(Color("xpress").opacity(0.5).gradient)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 40))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment:.bottom)
+            
+            //get delivery cost
+            .onAppear {
+                Task{
+                    let _ = await commande.setDeliveryCost(utilisateur.this)
+                }
+                
+            }
             //.blur(radius: userdata.cart.isEmpty ? 20 : 0)
             
             //if cart is empty, print it
             
-            if Command.current_cart.isEmpty{
+            if commande.isEmpty{
                 VStack(alignment: .center, spacing: 20) {
+                    Image("empty")
+                        .resizable()
+                        .scaledToFit()
+                        .padding()
+                        .frame(width: 200)
+                        .background(.bar)
+                        .shadow(radius: 5)
+                        .clipShape(Circle())
                     Text("Panier Vide")
                         .font(.custom("coffeeandcrafts", size: 50))
                         
                 }
                 .frame(maxWidth: .infinity, maxHeight:.infinity)
+                .background(Color("xpress"))
                 .background(Material.ultraThinMaterial)
             }
              
@@ -206,17 +228,20 @@ struct Cart: View {
         
         //Dates pages
         .fullScreenCover(isPresented: $userdata.show_date_selector_view) {
-            Date_selector_View(show: $userdata.show_date_selector_view, command_id: $command_id_after_check)
+            Date_selector_View(show: $userdata.show_date_selector_view)
         }
         
         //Confirmation page
-        .sheet(isPresented: $userdata.command_confirmation, onDismiss: {
+        .sheet(isPresented: $commande.confirmed, onDismiss: {
             //on dismiss
-            Command.current_cart = [:]
-            Command.current_cart.removeAll()
-            userdata.currentCommand = Command()
+            //Command.current_cart = [:]
+            //Command.current_cart.removeAll()
+            //userdata.currentCommand = Command()
+            commande.erase()
+            commande.confirmed = false
+            
         }, content: {
-            Command_confirmation(_command_id: $command_id_after_check)
+            Command_confirmation()
         })
         //Background
         .background(.ultraThinMaterial)
@@ -228,5 +253,9 @@ struct Cart_Previews: PreviewProvider {
     static var previews: some View {
         Cart().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Panier())
+            .environmentObject(Coupons())
+            .environmentObject(Commande())
+            .environmentObject(Utilisateur())
     }
 }

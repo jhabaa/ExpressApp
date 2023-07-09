@@ -50,6 +50,8 @@ struct express_date_style:DatePickerStyle{
 struct Date_selector_View: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var fetchmodel:FetchModels
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
     @State var dateIn:Date = Date()
     @State var dateOut:Date = Date()
     @Binding var show:Bool
@@ -63,118 +65,63 @@ struct Date_selector_View: View {
     @State var adress_modifier:Bool = false
     @State var adress_is_valid:Bool = false
     @State var sure_to_command:Bool = false
-    @Binding var command_id:Int
+    @EnvironmentObject var panier:Panier
     //@Binding var command_passed:Bool
     var body: some View {
         GeometryReader {
             let size = $0.size
             VStack (spacing:0) {
-                VStack(alignment:.center, spacing:0){
+                VStack(spacing:0){
                     Text("Total")
-                        .offset(y:10)
+                        //.offset(y:-30)
                         .font(.caption)
                         .foregroundColor(.gray)
-                    Text("\(userdata.Get_Cost_command().formatted(.currency(code: "EUR")))")
+                    Text("\(commande.TotalCost.formatted(.currency(code: "EUR")))")
                         .font(.custom("Ubuntu", size: 40))
-                    
                 }
-                .frame(width: size.width,height: 100, alignment:.bottom)
-                .background(.ultraThinMaterial)
+                .padding()
+                .frame(width: size.width,height: 130, alignment:.bottom)
+                
+                //.background(.bar)
+                
                 List {
-                    Section("Récupération") {
+                    Section {} footer: {
                         CalendarPart()
                     }
-                    Section("Livraison") {
+                    
+                    Section {} footer: {
                         CalendarPart_2()
                     }
                     
-                    Section {
-                        
-                    }header: {
-                        VStack{
-                            Text("Adresse")
-                                .font(.callout)
-                                .bold()
-                            Text(userdata.currentUser.adress)
-                                .font(.custom("Ubuntu", size: 15))
-                                .multilineTextAlignment(.leading)
-                        }
-                    } footer: {
-                        Text("Tapez pour modifer votre adresse")
-                    }
-                    .onTapGesture {
-                        // sheet view to modify user adress
-                        adress_modifier.toggle()
-                    }
-                }
-                .listStyle(.sidebar)
-                /*
-                ScrollView() {
-                    Text("Reception et Livraison")
-                        .bold()
-                    CalendarPart()
-                    //Dates selection
-                    CalendarPart_2()
-                    //Addres check
-                    HStack(alignment:.top){
-                        Image(systemName: "location.fill")
-                        //Adress
-                        VStack{
-                            Text("Adresse")
-                                .font(.callout)
-                                .bold()
-                            Text(userdata.currentUser.ADDRESS_USER)
-                                .font(.custom("Ubuntu", size: 15))
-                                .multilineTextAlignment(.leading)
-                        }
-                        Spacer()
-                        Image(systemName: "pencil.line")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background{
-                        RoundedRectangle(cornerRadius: 20).stroke()
-                    }
-                    .onTapGesture {
-                        // sheet view to modify user adress
-                        adress_modifier.toggle()
-                    }
-                    //total again
-                    HStack(alignment: .center) {
-                        Text("Total")
-                        Spacer()
-                        Text(userdata.Get_Cost_command().formatted(.currency(code: "EUR")))
-                            .bold()
-                    }
-                    .bold()
-                    .padding(.horizontal)
-                    
-                    Divider()
-                    
-                    //Button to validate the command
-                    
-                        
-                        .onTapGesture {
+                    Section {}header: {
+                            VStack{
+                                Text(utilisateur.this.adress)
+                                    .font(.custom("Ubuntu", size: 15))
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .frame(maxWidth:.infinity,maxHeight: 200)
+                            .background(Color("xpress").opacity(0.2).gradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
                             
-                        }
-                }*/
+                            .onTapGesture {
+                                adress_modifier.toggle()
+                            }
+                    }
+                footer:{
+                    Text("Tapez pour modifier l'adresse de cette livraison")
+                }
+                    
+                }
+                .listStyle(.grouped)
                 .navigationTitle("Récupération & livraison")
             }
             .frame(maxWidth: size.width)
             .ignoresSafeArea(edges: .all)
+            
+            
             //Valid button in overlay like every others command
             .overlay(alignment: .bottom) {
                 HStack{
-                    Image(systemName: "arrow.left.circle.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        //.frame(width: 50)
-                        .frame(width: 50)
-                        .onTapGesture {
-                            withAnimation(.priceJump()){
-                                show.toggle()
-                            }
-                        }
                     Text("Continuer")
                         .bold()
                         .padding(.horizontal, 60)
@@ -184,11 +131,9 @@ struct Date_selector_View: View {
                                 sure_to_command.toggle()
                             }
                         }
-                        .disabled(!userdata.currentCommand.isValid)
-                       
-                        
+                        .disabled(!commande.this.isValid)
                 }
-                .background(.thickMaterial)
+                .background(Color("xpress").opacity(0.7).gradient)
                 .clipShape(Capsule())
                 .shadow(radius: 5)
                 .padding(.bottom, 50)
@@ -196,22 +141,38 @@ struct Date_selector_View: View {
             
             //on appear, get the max treatment time
             .onAppear{
-                time_to_wait = userdata.MaxDaysForCard(Command.current_cart)
+                time_to_wait = commande.daysNeeded()
             }
+            
+            //back button
+            Button(action: {
+                withAnimation(.priceJump()){
+                    show.toggle()
+                }
+            }, label: {
+                Text("Retour")
+            })
+            .clipped()
+            .padding()
+            .buttonStyle(.borderedProminent)
+            .tint(Color("xpress").gradient)
+            .shadow(radius: 10, x: 2.1, y: 1)
+            .offset(y:50)
+            
             //view to modify adress
             if adress_modifier{
                 AdressEditView(_show: $adress_modifier)
             }
             
             // Are you sure that you want to validate this command ?
-            if sure_to_command{
+            if !sure_to_command{
                 Sure_to_command()
             }
-            
-               
         }
         .clipped()
+        .background(Color("xpress").opacity(0.3).gradient)
         .edgesIgnoringSafeArea(.all)
+        
     }
     @State var days:[String]=["lun","mar","mer","jeu","ven"]
     @ViewBuilder
@@ -240,11 +201,14 @@ struct Date_selector_View: View {
                 //Month and year
                 Text("\(extraData(a:getCurrentMonth(currentMonth: currentMonth))[1])")
                     .bold()
+                    
                     .overlay(alignment: .topTrailing) {
                         Text("\(extraData(a:getCurrentMonth(currentMonth: currentMonth))[0])")
                             .offset(y:-10)
                             .font(.caption2)
+                            //.frame(width: 100, alignment: .center)
                     }
+                    
                 
                 HStack(spacing:0){
                     Text("\(extraData(a:getNextMonth(currentMonth: currentMonth))[1])")
@@ -264,7 +228,9 @@ struct Date_selector_View: View {
                     }
                 
             }.frame(maxWidth: .infinity, alignment: SwiftUI.Alignment.center)
-                .padding(.horizontal)
+                .padding()
+                .background(.bar)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
             //
             ScrollView(.horizontal){
                 let cols = Array(repeating: GridItem(.flexible()), count: 1)
@@ -281,12 +247,14 @@ struct Date_selector_View: View {
                                         .padding(5)
                                         .frame(width:50)
                                 }
-                                .background(value.date == dateIn ? .green : .primary.opacity(0.1))
+                                .background(value.date == dateIn ? .blue.opacity(0.2) : .gray.opacity(0.1))
                                 // Lets set a fixed size
-                                .foregroundColor(value.date == dateIn ? .white : .primary)
+                                //.foregroundColor(value.date == dateIn ? .white : .primary)
+                                .foregroundColor(.primary)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .onTapGesture {
                                     dateIn = value.date
+                                    commande.setDateIn(value.date)
                                 }
                             }
                         }
@@ -294,8 +262,9 @@ struct Date_selector_View: View {
                     .onChange(of: dateIn) { _ in
                         Task{
                             await fetchmodel.FetchTimes(day:dateIn.mySQLFormat(), type: "in")
-                            userdata.currentCommand.enter_date = dateIn.mySQLFormat()
-                            userdata.currentCommand.return_date = fetchmodel.AddDaysToDate(date: dateIn, daysToAdd: userdata.MaxDaysForCard(userdata.cart)).mySQLFormat()
+                            //userdata.currentCommand.enter_date = dateIn.mySQLFormat()
+                            commande.setDateIn(dateIn)
+                           /// userdata.currentCommand.return_date = fetchmodel.AddDaysToDate(date: dateIn, daysToAdd: userdata.MaxDaysForCard(userdata.cart)).mySQLFormat()
                             date_limit = dateIn.set_limit(time_to_wait)
                         }
                     }
@@ -306,7 +275,13 @@ struct Date_selector_View: View {
             .cornerRadius(2)
             
             HStack {
-                Picker(selection: $userdata.currentCommand.enter_time, label: Text("Creneaux")) {
+                //If time is not selected, ask to select one
+                if commande.this.enter_time == "0"{
+                    Label("Selectionner créneau", systemImage: "info.circle")
+                        .foregroundColor(.red)
+                }
+                    
+                Picker(selection: $commande.this.enter_time, label: Text("Creneaux")) {
                     ForEach(fetchmodel.TIMES_IN_AVAILABLES, id: \.self) { value in
                         Text("\(value)h à \(value + 1)h")
                             .tag("\(value)")
@@ -329,22 +304,13 @@ struct Date_selector_View: View {
             let size = GeometryProxy.size
             VStack{
                 // I change my mind
-                Button {
-                    withAnimation(.priceJump()){
-                        sure_to_command.toggle()
-                    }
-                } label: {
-                    Text("Annuler")
-                        .underline()
-                        .foregroundColor(.gray)
-                }
 
                 // Recap card
-                LazyVGrid(columns: [GridItem(),GridItem()]) {
+                LazyVGrid(columns: [GridItem(),GridItem()],spacing: 0) {
                     // On the left side, we have the shipping adress
                     VStack{
                         Text("Adresse:")
-                        Text(userdata.currentUser.adress)
+                        Text(utilisateur.this.adress)
                             .multilineTextAlignment(.leading)
                             
                     }
@@ -353,7 +319,7 @@ struct Date_selector_View: View {
                             Text("Sous-total: ")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("\(userdata.Get_Cost_command().formatted(.currency(code: "EUR")))")
+                            Text("\(commande.getCost.formatted(.currency(code: "EUR")))")
                                 .font(.caption)
                                 .bold()
                         }
@@ -361,7 +327,7 @@ struct Date_selector_View: View {
                             Text("Livraison: ")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("\(userdata.currentCommand.delivery.formatted(.currency(code: "EUR")))")
+                            Text("\(commande.this.delivery.formatted(.currency(code: "EUR")))")
                                 .font(.caption)
                                 .bold()
                         }
@@ -369,7 +335,7 @@ struct Date_selector_View: View {
                             Text("Reduction: -")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("\(userdata.currentCommand.discount.formatted(.currency(code: "EUR")))")
+                            Text("\(commande.this.discount.formatted(.currency(code: "EUR")))")
                                 .font(.caption)
                                 .bold()
                         }
@@ -377,20 +343,68 @@ struct Date_selector_View: View {
                             Text("Total: ")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("\(userdata.Get_Cost_command().formatted(.currency(code: "EUR")))")
+                            Text("\(commande.TotalCost.formatted(.currency(code: "EUR")))")
                                 .font(.caption)
                                 .bold()
                         }
                     }
+                    .padding(.vertical, 20)
+                    
+                    // I've changed my mind
+                    HStack(alignment: .center, content: {
+                        Text("Annuler")
+                            .opacity(0.8)
+                    })
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight:.infinity)
+                    .background()
+                    .onTapGesture {
+                        withAnimation(.spring()){
+                            sure_to_command.toggle()
+                        }
+                    }
+                    
+                    HStack(alignment: .center, content: {
+                        Text("Confirmer")
+                            .bold()
+                    })
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight:.infinity)
+                    .background()
+                    .onTapGesture {
+                        Task{
+                            //Now validation of the command
+                            await commande.validate(utilisateur)
+                            let _ = await commande.PushCommand()
+                            
+                            if commande.confirmed{
+                                sure_to_command = false
+                                show = false
+                            }
+                            #warning("implement those functions")
+                            ///userdata.currentCommand.services_quantity = userdata.cartToString(Command.current_cart)
+                            ///let r = await fetchmodel.PushCommand(commande: userdata.currentCommand)
+                            /*
+                            DispatchQueue.main.async {
+                                //command_id = r
+                                sure_to_command.toggle()
+                                show.toggle()
+                                //userdata.command_confirmation = r == 0 ? false : true
+                            }
+                        */
+                        }
+                        
+                    }
                     
                     
                 }
-                .padding(.vertical, 20)
+                //.padding(.vertical, 20)
                 .frame(width: size.width-30)
-                .background(.thinMaterial)
+                .background(Color("xpress").opacity(0.4).gradient)
                 .cornerRadius(20, antialiased: true)
                 .shadow(radius: 20)
                 .overlay(alignment: .trailing) {
+                    /*
                     ZStack(alignment:.trailing){
                         ZStack(alignment:.trailing){
                             Rectangle().fill(Color("xpress")).frame(width: 10, height: 50)
@@ -404,56 +418,18 @@ struct Date_selector_View: View {
                                 .frame(width: 60)
                                 .clipShape(Circle())
                                 .offset(y:-100)
-                            
                         }
-                    }
-                   
-                    
-                    
-                        
-                        
+                    }*/
                 }
                 .padding()
                 
-                HStack {
-                    Group{
-                        Image(systemName: "arrow.right.circle.fill")
-                            .padding(.trailing,5)
-                            .animation(.logoAnimation(),value: sure_to_command)
-                        Text("Valider")
-                    }
-                    .font(.system(size: 35))
-                    .padding(.trailing,5)
-                    
-                }
-                .background(Color("xpress"))
-                .clipShape(Capsule())
-                .shadow(radius: 5)
-                .onTapGesture {
-                    Task{
-                        //Now validation of the command
-                        userdata.currentCommand.sub_total = userdata.currentCommand.get_sub_total
-                        userdata.currentCommand.cost = userdata.CommandCost()
-                        userdata.currentCommand.user = userdata.currentUser.id
-                        userdata.currentCommand.services_quantity = userdata.cartToString(Command.current_cart)
-                        let r = await fetchmodel.PushCommand(commande: userdata.currentCommand)
-                        DispatchQueue.main.async {
-                            command_id = r
-                            sure_to_command.toggle()
-                            show.toggle()
-                            userdata.command_confirmation = r == 0 ? false : true
-                        }
-                    }
-                    
-                }
                 
             }
             .frame(maxWidth: .infinity, maxHeight:.infinity)
-            
-                
         }
         .frame(alignment: .center)
-        .background(.ultraThinMaterial)
+        .background(Color("xpress").opacity(0.4))
+        .background(.bar)
     }
     //Shipping dates
     @ViewBuilder
@@ -503,7 +479,9 @@ struct Date_selector_View: View {
                     }
                 
             }.frame(maxWidth: .infinity, alignment: SwiftUI.Alignment.center)
-                .padding(.horizontal)
+                .padding()
+                .background(.bar)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
             //
             ScrollView(.horizontal){
                 let cols = Array(repeating: GridItem(.flexible()), count: 1)
@@ -537,22 +515,24 @@ struct Date_selector_View: View {
                             //   }
                         }
                     }
-                    
                 }
-                
-                
             }
             .cornerRadius(2)
             .onChange(of: dateOut) { _ in
                 Task{
                     await fetchmodel.FetchTimes(day:dateIn.mySQLFormat(), type: "out")
-                    userdata.currentCommand.return_date = dateOut.mySQLFormat()
+                    commande.setDateOut(dateOut)
+                    //userdata.currentCommand.return_date = dateOut.mySQLFormat()
                 }
             }
             //.padding(.horizontal, 10)
             
             HStack {
-                Picker(selection: $userdata.currentCommand.return_time, label: Text("Creneaux")) {
+                if commande.this.enter_time == "0"{
+                    Label("Selectionner créneau", systemImage: "info.circle")
+                        .foregroundColor(.red)
+                }
+                Picker(selection: $commande.this.return_time, label: Text("Creneaux")) {
                     ForEach(fetchmodel.TIMES_OUT_AVAILABLES, id: \.self) { value in
                         Text("\(value)h à \(value + 1)h")
                             .tag("\(value)")
@@ -572,8 +552,12 @@ struct Date_selector_View: View {
 
 struct Date_selector_View_Previews: PreviewProvider {
     static var previews: some View {
-        Date_selector_View(show: Binding.constant(true), command_id: .constant(124547))
+        Date_selector_View(show: Binding.constant(true))
             .environmentObject(FetchModels())
             .environmentObject(UserData())
+            .environmentObject(Panier())
+            .environmentObject(Commande())
+            .environmentObject(Utilisateur())
+            .environmentObject(Coupons())
     }
 }

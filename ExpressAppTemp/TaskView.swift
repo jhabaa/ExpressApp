@@ -11,12 +11,13 @@ struct TaskView: View {
     @State var today:Date = Date.now
     @EnvironmentObject var fetchModel:FetchModels
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var commande:Commande
     @State var sizeOfPage:CGSize = CGSize.init()
     @Namespace var namespace:Namespace.ID
     var body: some View {
-        //=============================== Taches du jour =======================================
-        if (userdata.taskbar){
-            if (userdata.pages[userdata.GetPage(page: "panier")] == true && !Command.current_cart.isEmpty){
+//===================== Taches du jour ==================================
+
+        if (userdata.pages[userdata.GetPage(page: "panier")] == true && !commande.isEmpty){
                 HStack{
                     HStack{
                         Image(systemName: "arrow.left.circle.fill")
@@ -48,11 +49,11 @@ struct TaskView: View {
                 .padding(-1)
                 .clipShape(Capsule())
                 .coordinateSpace(name: "taskbar")
+                
             }else{
                 HStack{
                     ForEach(userdata.pages.sorted(by: {$0.key.id < $1.key.id}), id: \.key) { key, value in
                         HStack{
-                            
                             Image(systemName:
                                     !value ? key.PageIcon : "\(key.PageIcon).fill"
                             ).resizable()
@@ -65,23 +66,16 @@ struct TaskView: View {
                                 Text("\(key.PageName)")
                                     .font(.title)
                             }
-                            
-                            
-                            
                         }
                         .overlay(alignment: .topTrailing, content: {
                             //If cart is not empty
-                            if (!Command.current_cart.isEmpty && key.PageName=="panier"){
-                                Text("\(Command.current_cart.count)")
-                                    .padding(4)
-                                    .font(.caption)
-                                    .background(.red.opacity(0.9))
-                                    .clipShape(Capsule())
-                                    .offset(x:5, y:5)
+                            if (!commande.isEmpty && key.PageName=="panier"){
+                                Circle()
+                                    .fill(.red)
+                                    .frame(width: 20)
                             }
                             
                         })
-                        
                         .onTapGesture {
                             withAnimation(.interpolatingSpring(mass: 0.1, stiffness: 10, damping: 2, initialVelocity: 0.5)) {
                                 userdata.GoToPage(goto: key.PageName)
@@ -94,20 +88,20 @@ struct TaskView: View {
                     }
                 }
                 .padding(-1)
-                .background(userdata.pages[userdata.GetPage(page: "panier")] == true ? .blue.opacity(0.7) : .blue.opacity(0.0))
+                .background(userdata.pages[userdata.GetPage(page: "panier")] == true ? Color("xpress").opacity(0.7) : .blue.opacity(0.0))
                 .background(.thinMaterial)
                 .clipShape(Capsule())
                 .coordinateSpace(name: "taskbar")
+                .offset(y: userdata.taskbar ? 0 : 100)
             }
         }
-    }
 }
-
 
 struct Previews_TaskView_Previews: PreviewProvider {
     static var previews: some View {
         TaskView()
             .environmentObject(FetchModels())
             .environmentObject(UserData())
+            .environmentObject(Commande())
     }
 }
