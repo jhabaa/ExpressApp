@@ -37,8 +37,9 @@ struct LoadingView: View {
                     
                 }.frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height)
             }.frame(maxWidth: GeometryProxy.size.width, alignment: Alignment.center)
+                .background(Color("xpress").opacity(0.6).gradient)
             .background(.ultraThinMaterial)
-            .transition(.opacity)
+            //.transition(.opacity)
         }.onAppear {
             withAnimation {
                 onAnimation.toggle()

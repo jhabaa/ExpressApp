@@ -18,6 +18,9 @@ struct CommandAllView: View {
     @State var selectedDate:Date = Date.init()
     @Namespace var namespace:Namespace.ID
     @EnvironmentObject var fetchModel : FetchModels
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var article:Article
     @State var commandList:[GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
     @State var selectedCommand:Command = Command.init()
     @State var showDetailCommand:Bool = false
@@ -32,13 +35,13 @@ struct CommandAllView: View {
             let size = GeometryProxy.size
             let minY = GeometryProxy.frame(in: .named("calendar")).minY
             List {
-                
-                    CalendarPart()
-                        .offset(y:minY < 0 ? -minY : 0)
-                        .edgesIgnoringSafeArea(.all)
+                /*
+                    CalendarPart(size)
+                        
+                        
                         .padding(0)
                         .listRowSeparator(Visibility.hidden)
-                
+                */
                 Section() {
                     ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
                         
@@ -52,13 +55,14 @@ struct CommandAllView: View {
                                     VStack(alignment:.leading ,spacing:5){
                                         HStack {
                                             HStack{
-                                                Text("\(fetchModel.GetUser_by_ID(id: com.user!).surname)")
+                                                Text("\(utilisateur.userWithId(com.user!).surname)")
                                                     .monospacedDigit()
                                                     .font(.title3.bold())
-                                                Text("\(fetchModel.GetUser_by_ID(id: com.user!).name)")
+                                                Text("\(utilisateur.userWithId(com.user!).name)")
                                                     .monospacedDigit()
                                                     .font(.title2)
                                             }
+                                            .padding(.horizontal)
                                             Spacer()
                                             
                                         }
@@ -70,7 +74,8 @@ struct CommandAllView: View {
                                         
                                         HStack{
                                             VStack{
-                                                Text("\(com.infos)")
+                                                Text("\(com.infos.isEmpty ? utilisateur.userWithId(com.user!).adress : com.infos)")
+                                                    .font(.caption2)
                                             }
                                             Spacer()
                                             //Prix
@@ -79,33 +84,31 @@ struct CommandAllView: View {
                                         .padding(.horizontal)
                                     }
                                     .frame(height:100)
-                                    .background(state ? .blue.opacity(0.2) : Color.red.opacity(0.2))
+                                    .background(state ? Color.blue.opacity(0.2).gradient : Color.red.opacity(0.2).gradient)
                                     //.shadow(radius: 1)
-                                    
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .shadow(radius: 3)
                                     //.ignoresSafeArea(.horizontal)
                                     .padding(.horizontal)
+                                    
                                     .onTapGesture {
                                         //To the trick : lets open the command interface
-                                        selectedCommand = com
-                                        showDetailCommand.toggle()
+                                        //selectedCommand = com
+                                        commande.services = commande.ReadCommand_List(list: com.services_quantity, article: article).services
+                                        commande.editMode(com)
                                     }
                                 }
                             }
                             
-                            //.background(.ultraThinMaterial)
-                            .clipShape(RoundedRectangle(cornerRadius: 30))
+                            
                             .ignoresSafeArea(edges: .horizontal)
                         } header: {
-                            Text("\(hour)h")
+                            if !commands_per_hour[hour]!.isEmpty{
+                                Text("\(hour)h")
+                            }
+                            
                         }
-                       
-                        
-                        
-                       
                     }
                 }header:{
+                    CalendarPart(size)
                     Text(
                         "Programme du \(selectedDate.dateUserfriendly())"
                     )
@@ -114,122 +117,9 @@ struct CommandAllView: View {
                 
                 
             }
-            .listStyle(.inset)
+           .listStyle(.plain)
             .ignoresSafeArea(.all)
             .edgesIgnoringSafeArea(.all)
-           /* ZStack(alignment:.top){
-                    
-                List {
-                    
-                }
-                /*ScrollView(showsIndicators:false){
-                    VStack(spacing:10){
-                            
-                            
-                            //Maintennant nous affichons les jours du mois
-                        LazyVGrid(columns: [GridItem(.fixed(30)), GridItem(.flexible())]) {
-                            ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
-                                
-                                VStack{
-                                    Text("\(hour)h")
-                                        .offset(y:-10)
-                                    Spacer()
-                                }
-                                .padding(.horizontal)
-                                
-                                
-                                VStack {
-                                    Divider()
-                                        .offset(y:-20)
-                                    ForEach(commands_per_hour[hour]!, id: \.self) { com in
-                                        //Guess if it's get day or not
-                                        let state:Bool = com.enter_date == selectedDate.mySQLFormat() ? true : false
-                                        
-                                        VStack(alignment:.leading ,spacing:5){
-                                            HStack {
-                                                HStack{
-                                                    Text("\(fetchModel.GetUser_by_ID(id: com.user!).surname)")
-                                                        .monospacedDigit()
-                                                        .font(.title3.bold())
-                                                    Text("\(fetchModel.GetUser_by_ID(id: com.user!).name)")
-                                                        .monospacedDigit()
-                                                        .font(.title2)
-                                                }
-                                                Spacer()
-                                                
-                                                Menu {
-                                                    
-                                                } label: {
-                                                    Image(systemName: "ellipsis")
-                                                }
-                                            }
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 5)
-                                            
-                                            Text("\(state ? "Récupérer":"Déposer") commande # \(com.id)")
-                                                .font(.caption)
-                                                .opacity(0.7)
-                                                .padding(.horizontal)
-                                            
-                                            HStack{
-                                                if state{
-                                                    Text("\(com.enter_time)H - \(Int(com.enter_time)! + 1)H ")
-                                                        .padding(.horizontal)
-                                                        .opacity(0.7)
-                                                    
-                                                }else{
-                                                    Text("\(com.return_time)H - \(Int(com.return_time)! + 1)H ")
-                                                        .padding(.horizontal)
-                                                        .opacity(0.7)
-                                                }
-                                                Spacer()
-                                                Image("user1")
-                                                    .resizable()
-                                                    .frame(width:30)
-                                                    .clipShape(Circle())
-                                            }
-                                            .padding(.horizontal)
-                                        }
-                                        .frame(height:100)
-                                        .background(state ? .blue.opacity(0.2) : Color.red.opacity(0.2))
-                                        //.shadow(radius: 1)
-                                        
-                                        .clipShape(RoundedRectangle(cornerRadius: 30))
-                                        //.ignoresSafeArea(.horizontal)
-                                        .padding(.horizontal)
-                                        .onTapGesture {
-                                            //To the trick : lets open the command interface
-                                            selectedCommand = com
-                                            showDetailCommand.toggle()
-                                        }
-                                    }
-                                }
-                                .frame(minHeight: 100, alignment: SwiftUI.Alignment.center)
-                                //.background(.ultraThinMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 30))
-                                .ignoresSafeArea(edges: .horizontal)
-                               
-                            }
-                            
-                        }
-                        .padding(.top, 350)
-                            
-                            
-                        }
-                    
-                }*/
-                .background(.ultraThinMaterial)
-                .zIndex(1)
-                
-                .coordinateSpace(name: "calendar")
-                            .onChange(of: currentMonth) { newValue in
-                                //Mise à jour du mois
-                                withAnimation(.spring()) {
-                                    currentDate = getCurrentMonth(currentMonth: currentMonth)
-                                }
-                                
-                            }
-            }*/
             .edgesIgnoringSafeArea(.all)
             .background(LinearGradient(colors: [Color("xpress").opacity(1),Color("fond").opacity(0.0)], startPoint: .top, endPoint: .center))
             .onChange(of: currentMonth) { newValue in
@@ -242,20 +132,18 @@ struct CommandAllView: View {
             .onChange(of: minY) { V in
                 print(minY)
             }
-            if showDetailCommand{
-                CommandDetailView(userdata: _userdata, show_this: $showDetailCommand, _command: selectedCommand)
+            if commande.edit{
+                CommandDetailView(userdata: _userdata)
             }
             
         }
         
         .background(.ultraThinMaterial)
-        
-        
         .onAppear{
             Task{
-                fetchModel.fetchCommands()
-                fetchModel.fetchUsers()
-                commands_per_hour = fetchModel.Commands_Hours_Dict(date: selectedDate)
+                commande.fetch()
+                utilisateur.fetch()
+                commands_per_hour = commande.Commands_Hours_Dict(date: selectedDate)
             }
            
             
@@ -263,23 +151,28 @@ struct CommandAllView: View {
         
     }
     @ViewBuilder
-    public func CalendarPart() -> some View{
+    public func CalendarPart(_ size:CGSize) -> some View{
             //let size = $0.size
+       
+        
         VStack(){
-                let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+            let cols = [GridItem(.fixed(50)), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
 
                 
                 //Calendar
                 LazyVGrid(columns:cols, pinnedViews:PinnedScrollableViews.sectionHeaders) {
                     
                     Section {
+                        
                         ForEach(days, id: \.self) { day in
                             Text(day)
                         }
+                        
                         ForEach(extractDates(currentMonth: currentMonth)){value in
                                 //CadView(value: value)
                             if (value.day == -1){
-                                Text("").disabled(false)
+                                    Text("")
+                                   // .disabled(false)
                             }else{
                                 VStack{
                                     Text("\(value.day)")
@@ -294,36 +187,30 @@ struct CommandAllView: View {
                                         .clipShape(Circle())
                                         .overlay(alignment: .center) {
                                             ZStack{
-                                                if (fetchModel.Mission_ToDay(date: value.date)){
+                                                if (commande.getToday(value.date)){
                                                     Circle().stroke(LinearGradient(colors: [.blue, .clear], startPoint:.leading, endPoint: .trailing))
-                                                        
                                                 }
-                                                if (fetchModel.Mission_Back_ToDay(date: value.date)){
+                                                if (commande.returnToday(value.date)){
                                                     Circle().stroke(LinearGradient(colors: [.red, .clear], startPoint:.trailing, endPoint: .leading))
                                                 }
-                                                
                                             }
                                         }
-                                    
                                 }
-                                
                                     .onTapGesture {
                                         withAnimation(.spring()) {
                                             selectedDate = value.date
                                         
-                                            commands_per_hour = fetchModel.Commands_Hours_Dict(date: selectedDate)
+                                            commands_per_hour = commande.Commands_Hours_Dict(date: selectedDate)
                                         }
                                         
                                         print(selectedDate)
                                     }
                             }
-                                
-                            
-                                
                      //   }
                         }
                     } header: {
                         //Mois et année
+                        
                             HStack{
                                 //Bouton du mois précédent
                                 
@@ -345,7 +232,7 @@ struct CommandAllView: View {
                                     Text(extraData(a: currentDate)[0])
                                         .fontWeight(.semibold)
                                 }.padding(.horizontal)
-                                    .background(Color("xpress"))
+                                    
                                     .containerShape(RoundedRectangle(cornerRadius: 30))
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -360,25 +247,18 @@ struct CommandAllView: View {
                                     }
                                 }
                                 
-                            }.frame(maxWidth: .infinity, alignment: SwiftUI.Alignment.center)
+                            }.frame(maxWidth: size.width, alignment: SwiftUI.Alignment.center)
                             .padding(.horizontal)
                         //
                         
                     }
-
-                            
-                    
-                        
                 }
-                .padding(.vertical)
-                .frame(maxWidth: .infinity, alignment: SwiftUI.Alignment.top)
+                //.padding(.vertical)
+                .ignoresSafeArea(.all)
+                .frame(width:size.width, alignment: SwiftUI.Alignment.top)
                 .padding(.top, 50)
-                
-                
-               
             }
-            .background(.ultraThinMaterial)
-            .cornerRadius(60)
+            
     }
     
     @ViewBuilder
@@ -421,17 +301,15 @@ struct CommandAllView: View {
                     .foregroundColor(.blue)
                 }
                 //introduire le code pour vérifier si la date est libre dans la DB
-                    
             }
         }
     }
 }
-//fonction qui recupère le jour en lettre d'une date
+///fonction qui recupère le jour en lettre d'une date
 func getDay(date:Date) -> String{
     var result:String = ""
     result = String(date.formatted(date: .complete, time: .omitted).split(separator: ",")[0])
     return result
-    
 }
 
 struct Previews_CommandAllView_Previews: PreviewProvider {
@@ -439,5 +317,8 @@ struct Previews_CommandAllView_Previews: PreviewProvider {
         CommandAllView()
             .environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Utilisateur())
+            .environmentObject(Commande())
+            .environmentObject(Article())
     }
 }

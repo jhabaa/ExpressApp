@@ -13,13 +13,15 @@ enum valid_types{
 
 struct CustomTextField: View {
     @EnvironmentObject var userdata:UserData
+    @EnvironmentObject var utilisateur:Utilisateur
     @EnvironmentObject private var FocusState: focusObjects
     @Binding var _text:String
     @State var _element:String
+    @State var hideMode:Bool = true
     @State var type:valid_types
     var body: some View {
         ZStack{
-            if FocusState.focus_in[_element]! || FocusState.focus_in.allSatisfy({$0.value == false}){
+            if FocusState.focus_in[_element]! || FocusState.focus_in.allSatisfy({$0.value == false} ) || !hideMode{
                 
                     if type == .password{
                         SecureField(_element, text: $_text)
@@ -51,7 +53,7 @@ struct CustomTextField: View {
                                 temp.removeLast()
                             }
                             
-                            userdata.currentUser.phone = temp.joined()
+                            utilisateur.this.phone = temp.joined()
                         }))
                             .multilineTextAlignment(.center)
                             .font(.title2)
@@ -107,5 +109,7 @@ struct CustomTextField: View {
 struct CustomTextField_Previews: PreviewProvider {
     static var previews: some View {
         CustomTextField(_text: .constant("Username"), _element: "username", type: .password)
+            .environmentObject(focusObjects())
+            .environmentObject(Utilisateur())
     }
 }

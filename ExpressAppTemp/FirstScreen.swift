@@ -68,6 +68,7 @@ struct FirstScreen: View {
     @EnvironmentObject var fetchModels:FetchModels
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var appSettings:AppSettings
+    @EnvironmentObject var utilisateur:Utilisateur
     @FocusState var focustate:adress_field?
     @FocusState var focusField:user_field?
     //@AppStorage("id") private var id = ""
@@ -119,6 +120,7 @@ struct FirstScreen: View {
                             RoundedRectangle(cornerRadius: 10 ).fill(Color("fond").opacity(0.9))
                                 .matchedGeometryEffect(id: "start", in: namespace)
                                 .shadow(radius: 2)
+                                .border(Color("xpress").opacity(0.4).gradient, width: 2)
                         }
                         .padding(.vertical, 30)
                         .onTapGesture {
@@ -128,58 +130,35 @@ struct FirstScreen: View {
                             }
                         }
                     }
-                    // Se connecter avec
-                    /*
-                    HStack {
-                        Rectangle()
-                          .frame(width: 100, height: 1)
-                          .foregroundColor(.gray)
-                          .background(Color.clear)
-                        Text("Se connecter avec").bold().font(.caption)
-                            
-                        Rectangle()
-                          .frame(width: 100, height: 1)
-                          .foregroundColor(.gray)
-                          .background(Color.clear)
-                    }
-                    HStack {
-                        Image(systemName: "apple.logo")
-                            .scaleEffect(1.5)
-                            .colorInvert()
-                            .padding()
-                            .onTapGesture {
+                    
+                    if !connectionPresentation{
+                        if #available(iOS 16.0, *) {
+                            HStack(spacing:20){
+                                Text("Pas de compte?")
+                                    
+                                Button {
+                                    signInView.toggle()
+                                } label: {
+                                    Text("S'enregister")
+                                }
+                                
+                            }.bold().padding()
+                        } else {
+                            // Fallback on earlier versions
+                            HStack(spacing:20){
+                                Text("Pas de compte?")
+                                    .foregroundColor(.blue)
+                                    //.colorInvert()
+                                Button {
+                                    
+                                } label: {
+                                    Text("S'enregister").bold()
+                                }
                                 
                             }
-                            .background{
-                                Circle().fill()
-                            }
-                            
-                    }.padding()*/
-                    if #available(iOS 16.0, *) {
-                        HStack(spacing:20){
-                            Text("Pas de compte?")
-                                
-                            Button {
-                                signInView.toggle()
-                            } label: {
-                                Text("S'enregister")
-                            }
-                            
-                        }.bold().padding()
-                    } else {
-                        // Fallback on earlier versions
-                        HStack(spacing:20){
-                            Text("Pas de compte?")
-                                .foregroundColor(.blue)
-                                //.colorInvert()
-                            Button {
-                                
-                            } label: {
-                                Text("S'enregister").bold()
-                            }
-                            
                         }
                     }
+                    
                 }
                 .padding(.vertical, 30)
                 .coordinateSpace(name: "btn1")
@@ -256,11 +235,9 @@ func Password_verification(a:String, b:String)->Bool{
         }else{
             return true
         }
-        
     }else{
         return false
     }
-    
 }
 
 
@@ -270,5 +247,6 @@ struct FirstScreen_Previews: PreviewProvider {
         FirstScreen(showMenu: .constant(true), showHome: .constant(false))
             .environmentObject(FetchModels())
             .environmentObject(UserData())
+            .environmentObject(Utilisateur())
     }
 }

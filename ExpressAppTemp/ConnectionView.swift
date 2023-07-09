@@ -33,6 +33,8 @@ struct ConnectionView: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var fetchModels:FetchModels
     @EnvironmentObject var appSettings:AppSettings
+    @EnvironmentObject var utilisateur:Utilisateur
+
     @StateObject private var focusState = focusObjects()
     @State var connectedState:Bool = false
     @State private var password = ""
@@ -46,7 +48,7 @@ struct ConnectionView: View {
     @State var notificationtext:String = ""
     @Namespace var namespace : Namespace.ID
     //let saveAction: ()->Void
-    
+    @State var forget:Bool=false
     var body: some View {
         
                 VStack{
@@ -56,8 +58,8 @@ struct ConnectionView: View {
                             HStack{
                                 Image(systemName: "person").resizable().scaledToFit().frame(width: 30, height: 30).foregroundColor(.primary).padding().background(.thinMaterial)
                                     .clipShape(Circle())
-                                CustomTextField(_text: $userdata.currentUser.name, _element: "username",type:.text)
-                                    .shadow(color: Color("fond"), radius: 5)
+                                CustomTextField(_text: $utilisateur.this.name, _element: "username",hideMode:false, type:.text)
+                                    .shadow(color: .secondary, radius: 5)
                             }
                             
                             
@@ -66,8 +68,10 @@ struct ConnectionView: View {
                                 Image(systemName: "lock").resizable().scaledToFit().frame(width: 30, height: 30)
                                     .foregroundColor(.primary).padding().background(.thinMaterial)
                                     .clipShape(Circle())
-                                CustomTextField(_text: $userdata.currentUser.password, _element: "password", type:.password)
-                                    .shadow(color: Color("fond"), radius: 5)
+                                CustomTextField(_text: $utilisateur.this.password, _element: "password"
+                                    ,hideMode:false,
+                                    type:.password)
+                                .shadow(color: .secondary, radius: 5)
                                     
                                    
                             }
@@ -76,8 +80,14 @@ struct ConnectionView: View {
                             .autocorrectionDisabled()
                         
                         //Mot de passe oublié
-                        Button("Mot de passe oublié ?"){}
+                        Button("Mot de passe oublié ?"){
+                            forget.toggle()
+                        }
                             .padding()
+                            .alert("Fonctionnalité bientôt disponible. Merci de contacter Express Dry Clean pour une récupération de compte", isPresented: $forget) {
+                                 
+                              
+                            }
                         
                         //Button
                         HStack(alignment: .center, spacing: 20){
@@ -104,13 +114,13 @@ struct ConnectionView: View {
                                         // Connection with current user (init if unconnected with just username and password filled)
                                    
                                     
-                                    let response = await userdata.Connect(user: userdata.currentUser)
+                                    let response = await utilisateur.connect(user: utilisateur.this)
                                     if response{
                                         print("connexion")
                                         appSettings.connect()
                                     }
-                                    await fetchModels.FetchServices()
-                                    await userdata.Retrieve_commands(userdata.currentUser)
+                                   // await fetchModels.FetchServices()
+                                    //await userdata.Retrieve_commands(userdata.currentUser)
                                 }
                             } label: {
                                 Text("Se Connecter").font(.system(size: 20)).padding()
@@ -124,6 +134,9 @@ struct ConnectionView: View {
                        
                     }
                     .padding()
+                    .background(Color("xpress").opacity(0.3).gradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .secondary, radius: 1)
                 }
                 //.frame(maxHeight: .infinity, alignment: .center)
                 //.padding()
@@ -157,6 +170,7 @@ struct Previews_ConnectionView_Previews: PreviewProvider {
             .environmentObject(AppSettings())
             .environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Utilisateur())
     }
         
 }

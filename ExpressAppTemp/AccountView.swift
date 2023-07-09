@@ -14,6 +14,9 @@ struct AccountView: View{
     @EnvironmentObject var fetchModel:FetchModels
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var appSetting:AppSettings
+    @EnvironmentObject var commande:Commande
+    @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var article:Article
     @State private var showCart:Bool = false
     @Namespace var namespace:Namespace.ID
     @State var logged:Bool = false
@@ -42,18 +45,14 @@ struct AccountView: View{
                 List{
                     Section {
                         
-                    } header: {
-                        Text("Pour moi")
-                    }
-                footer:{
-                    LazyHGrid(rows: [GridItem(.flexible(minimum: 100, maximum: 200))], alignment:.center) {
                         ForEach(userdata.options, id: \.self) { option in
                             NavigationLink {
                                 if option.PageName == "Infos"{
                                     //UserDetailView(review_this: userdata.currentUser)
-                                    UserDetailView(review_this: userdata.currentUser)
+                                    UserDetailView()
                                         .navigationTitle("Mon Compte")
-                                        
+                                    
+                                    
                                 }
                                 if option.PageName == "Commandes"{
                                     DetailView1()
@@ -69,42 +68,43 @@ struct AccountView: View{
                                     Image(systemName: "\(option.PageIcon)")
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(width: 50, height:50)
+                                        .frame(width: 100, height:50)
                                     Text(option.PageName)
                                 }
                                 .padding(10)
-                                .background(Material.ultraThick)
+                                .background(Color("xpress").opacity(0.4).gradient)
                                 .cornerRadius(10)
                                 .shadow(radius: 1)
                                 Spacer()
                             }
                         }
+                        
+                        
+                    } header: {
+                        Text("Pour moi")
                     }
-                    .frame(maxWidth: .infinity)
-                    }
-                
+                footer:{
+                    
+                }
+                    
                     //if admin
-                    if userdata.currentUser.isAdmin{
+                    if utilisateur.this.isAdmin{
                         Section {}header:{
                             VStack(alignment:.center){
                                 Button("Mode Admin"){
-                                    userdata.currentUser.type = "admin"
+                                    //userdata.currentUser.type = "admin"
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .buttonBorderShape(.roundedRectangle(radius: 20))
                                 .listItemTint(ListItemTint.fixed(Color.green))
                             }
                             .frame(maxWidth: .infinity)
-                            
                         }
                     footer: {
-                            Text("Vous migrerez vers une vue administrateur. Pour revenir à votre vue initiale, vous devrez dès lors vous deconnecter")
-                                .font(.caption)
-                        }
+                        Text("Vous migrerez vers une vue administrateur. Pour revenir à votre vue initiale, vous devrez dès lors vous deconnecter")
+                            .font(.caption)
                     }
-                
-
-                    
+                    }
                     Section{}
                 header:{
                     Button {
@@ -128,29 +128,15 @@ struct AccountView: View{
                 }
                     
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(.plain)
                 .navigationTitle("Reglages")
             }
-            if showDetails_Command{
+            if commande.edit{
                 //Command_modifier(command_to_review: selectedcommand, cart_to_review: cart_to_review, show: $showDetails_Command)
-                CommandDetailView(show_this: $showDetails_Command, _command: selectedcommand)
-                    .overlay(alignment: .topLeading) {
-                        Image(systemName: "arrow.backward.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 40)
-                            .padding(.top, 50)
-                            .padding(.leading, 20)
-                            .colorMultiply(.accentColor)
-                            .shadow(color: Color("fond"), radius: 10)
-                            .onTapGesture {
-                                //userdata.Back()
-                                showDetails_Command.toggle()
-                            }
-                    }
+                CommandDetailView()
             }
         })
-        .background(.ultraThinMaterial)
+        .background(Color("xpress").opacity(0.4).gradient)
         .background(.ultraThinMaterial)
         .onAppear{
             Task{
@@ -162,20 +148,20 @@ struct AccountView: View{
     func Infos() -> some View{
         ScrollView{
             VStack(alignment: .leading, spacing: 5){
-                Text(userdata.currentUser.name)
+                Text(utilisateur.this.name)
                     .font(.custom("Ubuntu", size: 30))
-                Text(userdata.currentUser.surname)
+                Text(utilisateur.this.surname)
                     .font(.headline)
-                Text("#\(userdata.currentUser.id)")
+                //Text("#\(userdata.currentUser.id)")
                 
             }
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
-            
+            /*
             Section {
                 VStack{
                     //Email entry
-                    TextField(text: $userdata.currentUser.mail) {
+                    TextField(text: $utilisateur.this.mail) {
                         Label("Email", systemImage: "house")
                     }
                     //.disabled(!modifyMode)
@@ -183,13 +169,13 @@ struct AccountView: View{
                     .background(.ultraThinMaterial)
                     .textContentType(UITextContentType.emailAddress)
                     .clipShape(Capsule())
-                    .onChange(of: userdata.currentUser.mail) { V in
-                        email_is_ok = userdata.CheckEmail()
+                    .onChange(of: utilisateur.this.mail) { V in
+                        email_is_ok = utilisateur.this.isMailIsCorrect
                     }
                     
                 }
                 .disabled(edit_mode)
-                .multilineTextAlignment(.center)
+                //.multilineTextAlignment(.center)
                 
                 TextField("Adresse de livraison",text: $userdata.currentUser.adress) {
                 }
@@ -206,7 +192,7 @@ struct AccountView: View{
                     .foregroundColor(.gray)
             }
             .padding()
-
+            */
             
         }
         .toolbar {
@@ -224,22 +210,20 @@ struct AccountView: View{
                 //Cards
                 List {
                     Section {
-                        ForEach(userdata.user_commands.reversed(), id: \.self){ com in
+                        ForEach(commande.all.reversed(), id: \.self){ com in
                             /*3D cards
                              CardView(com:com)
                              .padding(.horizontal)*/
                             Text("#\(com.id)")
-                            .badge("\(com.date_.toDate("mysql").dateUserfriendly())")
+                                .badge("\(com.date_.toDate("mysql").dateUserfriendly())")
                                 .onTapGesture {
                                     Task{
-                                        selectedcommand = com
-                                        showDetails_Command = true
+                                        // Set the command in the cart
+                                        commande.services = commande.ReadCommand_List(list: com.services_quantity, article: article).services
+                                        commande.editMode(com)
                                         print("Message loaded")
                                     }
-                                    
                                 }
-                            
-                            
                         }
                     } header: {
                         VStack(alignment:.center){
@@ -263,10 +247,10 @@ struct AccountView: View{
             //fetchModel.fetchUserCommands(user: userdata.currentUser)
             Task{
                 userdata.loading = true
-                await userdata.Retrieve_commands(userdata.currentUser)
+                await commande.fetchForuser(utilisateur.this)
                 selectedcommand = fetchModel.userCommands.reversed().first ?? Command.init()
                 userdata.loading = false
-                await cart_to_review = fetchModel.Message_to_Cart_review(message: selectedcommand.services_quantity)
+                
             }
             
             //fetchModel.fetchSewing()
@@ -274,9 +258,7 @@ struct AccountView: View{
         .onDisappear{
             userdata.taskbar = true
         }
-        
     }
-    
 }
 
 
@@ -287,6 +269,9 @@ struct Previews_AccountView_Previews: PreviewProvider {
         var oldcommand = UserData().user_commands
         AccountView().environmentObject(UserData())
             .environmentObject(FetchModels())
+            .environmentObject(Commande())
+            .environmentObject(Utilisateur())
+            .environmentObject(Article())
             .onAppear{
                 Task{
                     oldcommand.append(Command(user: 1, status: "sent", cost: Decimal(2.3), dateIn: Date(), message: "2:3,4:6"))

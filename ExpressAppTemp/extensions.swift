@@ -44,4 +44,45 @@ extension Date{
         let calendar:Calendar = Calendar.init(identifier: .gregorian)
         return calendar.dateComponents([.month], from: self).month!
     }
+    
+    func formatDate()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "yyyy-MM-dd"
+        return dateformater.string(from: self)
+    }
+    func dateUserfriendly()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "EEEE dd MMMM YYYY"
+        return dateformater.string(from: self)
+    }
+    
+    func mySQLFormat()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "yyyy/MM/dd"
+        return dateformater.string(from: self)
+    }
+    func dribbleStyle()->String{
+        let dateformater = DateFormatter()
+        dateformater.dateFormat = "yyyy.MM.dd"
+        return dateformater.string(from: self)
+    }
 }
+
+
+let dateRange: ClosedRange<Date> = {
+    let calendar = Calendar.current
+    let startComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: Date())
+    let endComponents = DateComponents(year: 2024, month: 12, day: 31, hour: 23, minute: 59, second: 59)
+    return calendar.date(from: startComponents)!
+        ...
+        calendar.date(from:endComponents)!
+}()
+
+
+
+let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "MMM dd"
+    return formatter
+}()
+
