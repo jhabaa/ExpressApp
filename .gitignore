@@ -1,2 +1,5 @@
 
 .DS_Store
+*.xcuserstate
+ExpressAppTemp.xcodeproj/project.xcworkspace/xcuserdata/jean-hubert.xcuserdatad/UserInterfaceState.xcuserstate
+*.xcuserstate
