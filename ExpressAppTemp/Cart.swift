@@ -27,147 +27,134 @@ struct Cart: View {
     @State var shippingDetails:Bool=false;
     var body: some View {
         GeometryReader { GeometryProxy in
-            
                 ScrollView{
                     Rectangle()
                         .frame(height: 0)
                         .foregroundStyle(.clear)
                         .padding(.top, 120)
                     Section {
+                        
                         ForEach(commande.services.sorted(by: {$0.service.id < $1.service.id}), id: \.self) { achat in
                             // Entry of the cart
                             // remove, decrease, increase in commande
-                            HStack{
-                                //MARK: Object
-                                HStack{
-                                    Image("page 1")
+                            VStack{
+                                HStack(alignment:.top){
+                                    Image(uiImage: (article.images[achat.service.illustration] ?? UIImage(named: "logo120"))!)
                                         .resizable()
-                                        .scaledToFit()
-                                    
-                                    //MARK: Articles Datas
-                                    VStack(alignment: .leading, spacing: 0) {
+                                        .frame(width: 80, height:80)
+                                        .scaledToFill()
+                                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                                        .padding(10)
+                                        .background(.bar)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    VStack(alignment:.leading,spacing:0){
                                         Text(achat.service.name)
-                                        Text(achat.service.cost.formatted(.currency(code:"EUR")))
+                                            .font(.custom("Ubuntu", size: 20))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.5)
                                             .bold()
-                                        Text("quantité : \(achat.quantity)")
-                                            .font(.caption2)
-                                    }
-                                    Spacer()
-                                    HStack{
-                                        Divider()
-                                        //minus button
-                                        Button {
-                                            //MARK: Remove an element of the cart
-                                            withAnimation {
-                                                commande.decrease(achat)
+                                        //MARK: Get categories for the service and show them
+                                        HStack{
+                                            ForEach(achat.service.categories.split(separator: ";", maxSplits: 3, omittingEmptySubsequences: true), id:\.self) { category in
+                                                Text(category)
+                                                    .font(.caption)
                                             }
-                                        } label: {
-                                            Image(systemName: "minus.square.fill")
-                                                .resizable()
-                                                .scaledToFit()
-                                               
                                         }
-                                        .frame(width:40, height:40)
-                                        
-                                        //plus button
-                                        Button {
-                                            //MARK: Add an element of the cart
-                                            withAnimation {
-                                                commande.increase(achat)
-                                            }
-                                        } label: {
-                                            Image(systemName: "plus.square.fill")
-                                                .resizable()
-                                                .scaledToFit()
-                                                
+                                        //Cost
+                                        Text(achat.service.cost.formatted(.currency(code:"EUR")))
+                                            .font(.custom("Ubuntu", size: 10))
+                                            
+                                        Spacer()
+                                        HStack{
+                                            //Quantity & buttons
+                                            Image(systemName: "minus")
+                                                .padding()
+                                                .background(.bar)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                                .scaleEffect(0.5)
+                                                .onTapGesture {
+                                                    withAnimation {
+                                                        commande.decrease(achat)
+                                                    }
+                                                }
+                                            //Quantity
+                                            Text("\(achat.quantity)")
+                                                .font(.custom("BebasNeue", size: 15))
+                                            Image(systemName: "plus")
+                                                .padding()
+                                                .background(.bar)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                                .scaleEffect(0.5)
+                                                .onTapGesture {
+                                                    withAnimation {
+                                                        commande.increase(achat)
+                                                    }
+                                                }
+                                            Spacer()
+                                            //Delete button
+                                            Image(systemName: "bin.xmark.fill")
+                                                .padding(.horizontal)
+                                                .onTapGesture {
+                                                    withAnimation {
+                                                        commande.remove(achat)
+                                                    }
+                                                }
                                         }
-                                        .frame(width:40, height:40)
                                     }
-                                    .padding()
+                                   
                                 }
-                                
-                                .frame(maxWidth: .infinity, maxHeight:100, alignment:.leading)
-                                .background{
-                                    RoundedRectangle(cornerRadius: 2).fill(colorscheme == .dark ? .black : .white)
-                                        .shadow(color: .gray, radius: 2)
-                                }
-                                .clipShape(RoundedRectangle(cornerRadius: 2))
-                                Spacer()
-                                //MARK: Delete object Button
-                                Button {
-                                    withAnimation {
-                                        commande.remove(achat)
-                                    }
-                                } label: {
-                                    Image(systemName: "xmark.seal.fill")
-                                }
-                                .frame(width:40, height:40)
-                                .buttonStyle(.borderedProminent)
-                                .tint(.red)
+                                //MARK: Custom Divider
+                                Rectangle()
+                                    .fill(LinearGradient(colors: [
+                                        Color.primary.opacity(0),
+                                        Color.primary.opacity(1),
+                                        Color.primary.opacity(0)
+                                    ], startPoint: .leading, endPoint: .trailing))
+                                    .frame(maxWidth: .infinity, maxHeight:0.3)
                             }
+                            .padding(.horizontal)
                         }
                     }
                     
-                    //PromoCode
-                    Section {}
-                header: {
-                    HStack{
-                        TextField("Coupon", text: .init(get: {
-                            coupon.this.code
-                        }, set: { Value in
-                            coupon.this.code = Value
-                        }))
-                            .textCase(.uppercase)
-                            .autocapitalization(UIKit.UITextAutocapitalizationType.allCharacters)
-                            .padding()
-                            .autocorrectionDisabled(true)
-                            .background(.bar)
-                            .overlay(alignment: .trailing) {
-                                VStack{
-                                    Button{
-                                        Task{
-                                            commande.this.discount = await coupon.this.Check_Coupon()
+                    //MARK: Promo code
+                    VStack{
+                        HStack{
+                            TextField("Coupon", text: .init(get: {
+                                coupon.this.code
+                            }, set: { Value in
+                                coupon.this.code = Value
+                            }))
+                                .textCase(.uppercase)
+                                .autocapitalization(UIKit.UITextAutocapitalizationType.allCharacters)
+                                .padding()
+                                .autocorrectionDisabled(true)
+                                .background(.bar)
+                                .overlay(alignment: .trailing) {
+                                    VStack{
+                                        Button{
+                                            Task{
+                                                commande.this.discount = await coupon.this.Check_Coupon()
+                                            }
+                                        }label: {
+                                            Text("Appliquer")
+                                                .font(.caption)
+                                                .padding(7)
                                         }
-                                    }label: {
-                                        Text("Appliquer")
-                                            .font(.caption)
-                                            .padding(7)
+                                        .buttonStyle(.borderless)
+                                        .tint(Color("xpress"))
+                                        .colorInvert()
                                     }
-                                    .buttonStyle(.borderless)
-                                    .tint(Color("xpress"))
-                                    .colorInvert()
+                                    .frame(maxHeight: .infinity)
+                                    .background(Color("xpress"))
                                 }
-                                .frame(maxHeight: .infinity)
-                                .background(Color("xpress"))
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
-                    }
-                    .frame(maxWidth: 200)
-                    .padding(.horizontal,30)
-                    .shadow(radius: 1)
-                    
-                }
-                footer: {
-                    //If promocode is correct
-                    HStack{
-                        if (commande.this.discount != Decimal()){
-                            
-                            Label("Coupon de \(commande.this.discount.formatted(.currency(code:"eur"))) appliqué", systemImage: "checkmark.circle")
-                                .foregroundColor(.green)
-                                .font(.caption)
-                                .padding(.horizontal)
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
                         }
+                        .frame(maxWidth: 200)
+                        .padding(.horizontal,30)
+                        .shadow(radius: 1)
                     }
-                    .background(Color.clear)
-                    //padding to escape the bottom bar
-                    .padding(.bottom, 300)
+                    .scaleEffect(commande.isEmpty ? 0 : 1)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 1))
-                }
-                .listStyle(PlainListStyle())
-                .listRowSeparator(.visible, edges: VerticalEdge.Set.bottom)
-                .background(Color.clear)
-                .frame(maxWidth: .infinity)
                 
             
            // .blur(radius: userdata.cart.isEmpty ? 20 : 0)
@@ -179,21 +166,20 @@ struct Cart: View {
             }
             //Header
             HStack(alignment:.bottom){
-                Button {
-                    userdata.GoToPage(goto: "accueil")
-                } label: {
-                    Text("Retour")
-                        .font(.custom("ubuntu", size: 20))
-                        
-                }
-                .padding(.horizontal)
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .shadow(radius: 10)
+                Image(systemName: "chevron.backward")
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .onTapGesture {
+                        withAnimation {
+                            userdata.GoToPage(goto: "accueil")
+                        }
+                    }
+                //.buttonBorderShape(RoundedRectangle(cornerRadius: 10))
             }
             .frame(alignment: .leading)
-            .offset(y:70)
-            
+            .offset(y:50)
+            .padding(.horizontal)
             VStack{
                 VStack(alignment: .center, spacing: 20) {
                     Group{

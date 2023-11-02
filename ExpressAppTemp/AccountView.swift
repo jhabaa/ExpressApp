@@ -153,8 +153,6 @@ struct AccountView: View{
             .scaleEffect(y: (utilisateur.this != utilisateur.review && utilisateur.review.isMailIsCorrect) ? 1 : 0, anchor: .center)
             .animation(.spring, value: utilisateur.review)
             
-                
-            
             if show_options{
                 VStack(spacing:100){
                     VStack(spacing:60){
@@ -203,11 +201,7 @@ struct AccountView: View{
                                         .offset(y:20)
                                 }
                         }
-                        
                     }
-                    
-                    
-                    
                     Text("Je veux supprimer mon compte")
                         .font(.caption)
                         .underline(pattern: Text.LineStyle.Pattern.solid)
@@ -218,7 +212,6 @@ struct AccountView: View{
                         .confirmationDialog(Text("Confirmation"), isPresented: $show_delete_account) {
                             Button("Oui, Je me désinscris"){
                                 //
-                                
                                     Task{
                                         let r = await utilisateur.delete(utilisateur.this)
                                         if r{
@@ -226,21 +219,15 @@ struct AccountView: View{
                                             appSetting.disconnect()
                                         }
                                     }
-                                
                             }
                             
                         } message: {
                             Text("Votre compte sera définitivement supprimé de nos serveurs. Voulez vous continuer ?")
                         }
-
-
-                        
                 }
                 .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: Alignment.center)
                 .background(.ultraThinMaterial)
             }
-            
-            
             //LogOut & deletion button
             HStack{
                 Image(systemName: show_options ? "xmark": "rectangle.portrait.and.arrow.forward")
@@ -255,6 +242,7 @@ struct AccountView: View{
             }
             .padding()
             .frame(width: GeometryProxy.size.width, alignment:.trailing)
+            .scaleEffect(show_this_command ? 0 : 1)
            
             if show_this_command{
                 #warning("To do again this view")
@@ -298,7 +286,10 @@ struct AccountView: View{
                        
                    
                } placeholder: {
-                   ProgressView()
+                   Image("page 4")
+                       .resizable()
+                       .scaledToFill()
+                       .scaleEffect(progress > 0 ? progress + 1 : 1)
                }
                
             }
