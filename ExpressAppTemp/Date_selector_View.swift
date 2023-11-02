@@ -126,6 +126,7 @@ struct Date_selector_View: View {
     //@Binding var command_passed:Bool
     @State var possibleTimesIn:[Int]=[]
     @State var possibleTimesOut:[Int]=[]
+    @State var alertInfos:Bool = false
     var body: some View {
         GeometryReader {
             let size = $0.size
@@ -140,10 +141,8 @@ struct Date_selector_View: View {
                             .animation(.priceJump(), value: selectionPhase)
                     }else{
                         Divider()
-                            .padding(.bottom, 70)
+                            .padding(.bottom, 80)
                     }
-                        
-                   
                         //MARK: Here we'll put 2 views to be able to slide between them
                     
                     if stage != .step4 && stage != .step5{
@@ -165,10 +164,29 @@ struct Date_selector_View: View {
                     }
                     if stage == .step5{
                         Recap()
+                        //MARK: Get sup infos here
+                        VStack(spacing:0){
+                            ZStack(alignment:.top){
+                                Text("Informations supplémentaires")
+                                    .font(.custom("BebasNeue", size: 20))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                                    .offset(y:-20)
+                                TextEditor(text: $commande.this.infos)
+                                    .font(.custom("Ubuntu", size: 15))
+                                    .padding()
+                                    .background(.bar)
+                                    .foregroundStyle(.gray)
+                                    .frame(height:100)
+                            }
+                            .overlay(alignment:.bottomLeading) {
+                                Text("Caractères restants : \(150 - commande.this.infos.count)")
+                                    .font(.caption2)
+                                    .foregroundStyle((150 - commande.this.infos.count) < 0 ? .red : .gray)
+                            }
+                        }
+                        
                     }
-                    
-                    
-                   
             }
             
             //on appear, get the max treatment time
@@ -178,18 +196,43 @@ struct Date_selector_View: View {
                    await daysOff.Retrieve_daysOff()
                 }
             }
-            //back button
-            Button(action: {
-                withAnimation(.priceJump()){
-                    show.toggle()
+            //MARK: Header buttons
+            HStack{
+                Group{
+                    Image(systemName: "chevron.backward")
+                        .onTapGesture {
+                            withAnimation(.priceJump()){
+                                show.toggle()
+                            }
+                        }
+                    Spacer()
+                        
+                    Image(systemName:"info.circle")
+                        .onTapGesture {
+                            withAnimation(.priceJump()){
+                                alertInfos.toggle()
+                            }
+                        }
                 }
-            }, label: {
-                Image(systemName: "xmark")
-            })
-            .clipped()
-            .padding()
-            .buttonStyle(.bordered)
-            .offset(y:40)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .alert("Informations", isPresented: $alertInfos) {
+                        Button {
+                            //
+                        } label: {
+                            Text("ok")
+                        }
+
+                    } message: {
+
+                            Text("Les dates de récupérations et de livraisons permettent une meilleure organisation. Si en plus vous êtes disponibles à d'autres moments, vous pouvez mentionner vos disponibilités dans les informations supplémentaires")
+                    }
+
+            }
+            .offset(y:70)
+            .padding(.horizontal)
+            .frame(height: 0)
             
             //MARK: Actions buttons
             VStack(alignment: HorizontalAlignment.center, spacing: 2){
@@ -230,6 +273,7 @@ struct Date_selector_View: View {
                 //.buttonBorderShape(RoundedRectangle(cornerRadius: 10))
                 .buttonStyle(.borderedProminent)
                 .offset(x:stage == .step3 || stage == .step4 || stage == .step5 ? 0 : 500)
+                .disabled(commande.this.infos.count > 150)
                 
                 Button(action: {
                     //MARK: Reset the process
@@ -273,7 +317,7 @@ struct Date_selector_View: View {
     @State private var indexOut = 0
     @ViewBuilder
     public func TimesPart(_ screen:CGSize) -> some View{
-        var avalaibleTimes = fetchmodel.TIMES_OUT_AVAILABLES
+        let _ = fetchmodel.TIMES_OUT_AVAILABLES
         let size = screen
         let pageWidth:CGFloat = size.width/3
         let timeWidth:CGFloat = 100
@@ -370,8 +414,8 @@ struct Date_selector_View: View {
             let prevMonth:Date = getCurrentMonth(currentMonth: currentMonth - 1 )
             let nextMonth1:Date = getCurrentMonth(currentMonth: currentMonth + 1)
             let nextMonth2:Date = getCurrentMonth(currentMonth: currentMonth + 2)
-            var thisYear = extraData(a:thisMonth)[0]
-            var dark = colorscheme == .dark ? true : false
+            let _ = extraData(a:thisMonth)[0]
+            let dark = colorscheme == .dark ? true : false
                 VStack(alignment:.leading,spacing:0){
                     Text("\(extraData(a:thisMonth)[0])")
                         .font(.headline)

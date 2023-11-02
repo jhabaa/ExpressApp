@@ -7,6 +7,11 @@
 
 import SwiftUI
 import MapKit
+
+enum signInStage {
+case username, password, adress, contact
+}
+
 enum user_field{
     case username, password, v_password
 }
@@ -38,8 +43,11 @@ struct SignIN: View {
     @State var is_valid:Bool = false
     @State var primary_infos:Bool=false
     @State var adress_entry_view:Bool = false
+    @State var stages:[signInStage] = [.username, .contact, .password, .adress]
+    @State var stageIndex:Int = 0
+    @State var stageIsValid:Bool = true
     var body: some View {
-        GeometryReader { _ in
+        GeometryReader {
             //Fond d'écran
             ZStack (alignment: .center, content: {
                 Rectangle().fill(.clear).colorInvert()
@@ -80,72 +88,114 @@ struct SignIN: View {
                 AdressSelectorView(show: $_show)
             }else{
                 ScrollView{
-                    ExpressLogo()
-                        .scaleEffect(1.3)
-                        .animation(.spring(), value: _show)
-                        .matchedGeometryEffect(id: "logo", in: namespace)
-                        
-                    Text(page.this.title)
-                        .font(.system(size: 40))
-                        .fontWeight(.bold)
-                        .padding(.top)
-                        .minimumScaleFactor(0.4)
-                        
-                    Text(page.this.subTitle)
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                    Rectangle()
+                        .fill(LinearGradient(colors: [Color.primary.opacity(0), Color.primary.opacity(1)], startPoint: .leading, endPoint: .trailing))
+                        .frame(height: 0.2)
+                        .padding(.bottom, 70)
+                    VStack(alignment:.leading){
+                        Text(page.this.title)
+                            .font(.custom("Ubuntu", size: 50))
+                            .fontWeight(.bold)
+                            .padding(.top)
+                            .minimumScaleFactor(0.4)
+                            
+                        Text(page.this.subTitle)
+                            .font(.custom("Ubuntu", size: 10))
+                            .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity, alignment:.leading)
+                    Spacer(minLength: 50)
                     
                     if page.current_index==1{
                         CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
                             .padding(.horizontal)
+                            .ignoresSafeArea(.keyboard)
                             
                         CustomTextField(_text: $utilisateur.this.surname, _element: "prenom",hideMode:false,type:.text, name:"Prenom d'utilisateur")
                             .padding()
+                            .ignoresSafeArea(.keyboard)
                         
-                        Spacer()
-                        //Next Button
-                        validationBtn(utilisateur.this.name.isEmpty)
                     }
                     
                     
                     
                     if page.current_index==2{
                         CustomTextField(_text: $utilisateur.this.phone, _element: "gsm",hideMode:false, type: .phone)
+                            .ignoresSafeArea(.keyboard)
                         CustomTextField(_text: $utilisateur.this.mail, _element: "email",hideMode:false,type:.text, name:"@Email")
                             .textCase(.lowercase)
                             .textContentType(.emailAddress)
-                        validationBtn((!utilisateur.this.isMailIsCorrect && !utilisateur.this.isValidBelgianGSM))
+                            .ignoresSafeArea(.keyboard)
                     }
                     
                     if page.current_index == 3{
                         CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe",hideMode:false,type:.password, name:"Mot de passe")
+                            .ignoresSafeArea(.keyboard)
                         CustomTextField(_text: $v_password, _element: "v-mot de passe",hideMode:false,type:.password, name:"Entrez à nouveau")
-                        
-                         validationBtn(!(utilisateur.this.password == v_password && !utilisateur.this.password.isEmpty))
+                            .ignoresSafeArea(.keyboard)
                     }
-                        
-                   
-                    
                 }
                 
                 .ignoresSafeArea(.keyboard)
                 
                 //return or prev
-                Text(page.current_index == 1 ? "Annuler" : "Retour")
-                    .underline()
-                    .padding()
-                    .onTapGesture {
-                        withAnimation(.spring()){
-                            if page.current_index == 1{
-                                //Annuler
-                                //userdata.currentUser = User()
-                                utilisateur.this = User()
-                                _show = false
-                            }else{
-                                page.prev()
+                HStack{
+                    Image(systemName: page.current_index == 1 ? "xmark" : "chevron.backward")
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .onTapGesture {
+                            withAnimation(.spring()){
+                                if page.current_index == 1{
+                                    //Annuler
+                                    //userdata.currentUser = User()
+                                    utilisateur.this = User()
+                                    _show = false
+                                }else{
+                                    page.prev()
+                                }
                             }
                         }
-                    }
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .padding()
+                
+                //===============Algo ============
+                //MARK: Show or not depending on the content
+                
+                //MARK: Register validation Button
+                VStack(alignment:.center){
+                    Button(action: {
+                        switch stages[stageIndex] {
+                        case .password:
+                            Task{
+                                userdata.loading = true
+                                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(2)){}
+                                primary_infos = (await utilisateur.register())
+                                //await fetchModels.FetchServices()
+                                userdata.loading = false
+                            }
+                            
+                        
+                        default:
+                            withAnimation(.spring()) {
+                                stageIndex += 1
+                                page.next()
+                            }
+                        }
+                    }, label: {
+                        Text("Continuer")
+                            .frame(maxWidth: .infinity)
+                    })
+                }
+                .padding()
+                .buttonBorderShape(.roundedRectangle(radius: 10))
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: $0.size.width, maxHeight: $0.size.height, alignment: .bottom)
+                .ignoresSafeArea(.keyboard, edges: .bottom)
+                .scaleEffect(
+                    StageIsValid() ? 1 : 0
+                )
+                
             }
             
         }
@@ -162,70 +212,18 @@ struct SignIN: View {
     @State var place: IdentifiablePlace = .init(lat: 50, long: 50)
     @State var loading:Bool = false
     
-    //validation Button
-    @ViewBuilder
-    func validationBtn(_ hide:Bool? = true, _ last:Bool? = false) -> some View{
-        GeometryReader {
-            var s = $0.size
-            VStack(alignment:.center){
-                Button {
-                    //return all to false first
-                    focusState.focus_in.forEach { (key: String, value: Bool) in
-                        focusState.focus_in.updateValue(false, forKey: key)
-                    }
-                    
-                    if page.current_index < page.pages.count{
-                        //show next
-                        withAnimation(.spring()) {
-                            page.next()
-                        }
-                    }else{
-                        //validate form
-                        Task{
-                            do{
-                                userdata.loading = true
-                                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(2)){}
-                                primary_infos = (await utilisateur.register())
-                                
-                                print("Primary infos \(primary_infos)")
-                                
-                                //await fetchModels.FetchServices()
-                                userdata.loading = false
-
-                                //await userdata.Retrieve_commands(userdata.currentUser)
-                                
-                                /*
-                                await UserData.save(user: userdata.currentUser, completion: {_ in
-                                })
-                                */
-                            }catch{
-                                print("Erreur d'ajout utilisateur")
-                            }
-                        }
-                    }
-                } label: {
-                    if page.current_index < page.pages.count{
-                        Label("Suivant", systemImage:"arrow.right.circle")
-                            .padding()
-                    }else{
-                        Label("C'est Parti !", systemImage:"arrow.down.circle")
-                            .padding()
-                    }
-                }
-                .frame(width: .infinity)
-                .buttonStyle(.borderedProminent)
-                .tint(Color("xpress"))
-                .disabled((hide ?? false))
-            }
-            .frame(width: s.width)
-            .scaleEffect(hide ?? true ? 0 : 1)
-            
-            .animation(.spring, value: hide)
+    func StageIsValid()->Bool{
+        switch stages[stageIndex] {
+        case .username:
+            return !utilisateur.this.name.isEmpty
+        case .password:
+            return utilisateur.this.password == v_password
+        case .adress:
+            return false
+        case .contact:
+            return utilisateur.this.isMailIsCorrect && utilisateur.this.isValidBelgianGSM
         }
-        
     }
-        
-        
 }
 
 struct SignIN_Previews: PreviewProvider {

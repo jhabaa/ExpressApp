@@ -168,12 +168,13 @@ final class Commande:Panier{
         if user.province.contains("Brabant flamand"){
             return parameters?.tarif_brabant ?? 10.00
         }
-        if user.province.contains("Bruxelles"){
+        if user.province.contains("Bruxelles") || user.province.contains("Brussels"){
             return parameters?.tarif_bruxelles ?? 5.00
         }
         else{
             let expressLocation = CLLocation(latitude: 50.87834073549257, longitude: 4.4890222600788725) // Location of Express according to GMaps
-            let distanceFromZaventem = expressLocation.distance(from: CLLocation(latitude: CLLocationDegrees(user.loc_lat), longitude: CLLocationDegrees(user.loc_lon))) // Lets calculate the distance between the local and the delivery point
+        //MARK: Usage of mapkit to get the distance between the point at ZAVENTEM and the user address. The distance is in meter, let's convert it in km
+            let distanceFromZaventem = expressLocation.distance(from: CLLocation(latitude: CLLocationDegrees(user.loc_lat), longitude: CLLocationDegrees(user.loc_lon)))/1000 // Lets calculate the distance between the local and the delivery point
             return Decimal(distanceFromZaventem) * (parameters?.tarif_km ?? 0.689)
         }
         
