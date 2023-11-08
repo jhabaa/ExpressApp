@@ -18,6 +18,9 @@ let blob = Path{ path in
     path.addQuadCurve(to: CGPoint(x: 30, y: 50), control: CGPoint(x:100, y: 50))
 }
 
+enum optionBtn{
+    case home, options, hidden
+}
 
 struct AccountView: View{
     @Environment(\.editMode) private var editMode
@@ -47,7 +50,6 @@ struct AccountView: View{
     @State var selectedcommand:Command = Command.init()
     @State var showDetails_Command:Bool = false
     @State var modified_Command:Command = Command.init()
-    @State var commadToView:Command=Command.init()
     @State var cart_to_review:[Service:Int] = [:]
     @State var show_all_commands:Bool = false
     @State var email_is_ok:Bool = false
@@ -63,7 +65,7 @@ struct AccountView: View{
     @State var is_valid:Bool = false
     @State var changeAdress:Bool = false
     @State var credits:Bool = false
-    @State var show_options:Bool = false
+    @State var show_options:optionBtn = .home
     @State var show_delete_account = false
     @State var place: IdentifiablePlace = .init(lat: 50.87353, long: 4.48712)
     @State var show_this_command:Bool = false
@@ -75,85 +77,9 @@ struct AccountView: View{
             let frameY = GeometryProxy.frame(in: .named("scroll")).minY
             let minY = GeometryProxy.frame(in: .named("scroll")).minY + GeometryProxy.safeAreaInsets.top
            
-            
-            ScrollView(showsIndicators: false){
-                let minY_Scroll = GeometryProxy.frame(in: .named("scroll")).minY
-                //cover
-                BackgroundFadeColor(s)
-                    .ignoresSafeArea(.all)
-                
-                
-                //MARK: Show user's card
-                UserCard(user: utilisateur.this, width: s.width)
-                    .padding(.top, 200)
-               
-                //Autres menus
-                
-                
-                Contacts()
-                
-                //Old commands list
-                DisclosureGroup(isExpanded: $showDetails_Command) {
-                    //Commands list
-                    Section {
-                        ForEach(commande.all.reversed(), id: \.self){ com in
-                            Button(action: {
-                                Task{
-                                    commandToView = com
-                                    show_this_command = true
-                                }
-                            }, label: {
-                                VStack(alignment:.leading){
-                                    Text(com.date_)
-                                        .foregroundStyle(.blue)
-                                        .bold()
-                                    HStack(alignment:.center){
-                                        Text("\(com.cost.formatted(.currency(code:"EUR")))")
-                                            .font(.caption2)
-                                            .foregroundStyle(.gray)
-                                        let c = com.services_quantity.filter({String($0) == ":"}).count
-                                        Text("\(c) article\( c > 1 ? "s":"")")
-                                            .font(.caption2)
-                                            .foregroundStyle(.gray)
-                                    }
-                                    .frame(alignment: .leading)
-                                }
-                            })
-                        }
-                    }
-                } label: {
-                    Label("Mes commandes", systemImage: "timelapse")
-                }
-                .task {
-                    await commande.fetchForuser(utilisateur.this)
-                }
-                .padding()
-                Divider()
-                    .padding(.bottom, 150)
-            }
-            .coordinateSpace(name: "scroll")
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(TextInputAutocapitalization.never)
-            .blur(radius: show_this_command ? 20 : 0, opaque: false)
-            .ignoresSafeArea(.all)
-            
-            Button(action: {
-                let handle = Task {
-                    return await utilisateur.review.update()
-                }
-                if (utilisateur.this.isUser){
-                    utilisateur.this = utilisateur.review
-                }
-            }, label: {
-                Label("Enregistrer", systemImage: "square.and.arrow.down.on.square.fill")
-            })
-            .frame(width: GeometryProxy.size.width)
-            .buttonBorderShape(.roundedRectangle)
-            .buttonStyle(.borderedProminent)
-            .scaleEffect(y: (utilisateur.this != utilisateur.review && utilisateur.review.isMailIsCorrect) ? 1 : 0, anchor: .center)
-            .animation(.spring, value: utilisateur.review)
-            
-            if show_options{
+            UserDetailView(user: utilisateur.this)
+
+            if show_options == .options{
                 VStack(spacing:100){
                     VStack(spacing:60){
                         Button {
@@ -229,32 +155,55 @@ struct AccountView: View{
                 .background(.ultraThinMaterial)
             }
             //LogOut & deletion button
-            HStack{
-                Image(systemName: show_options ? "xmark": "rectangle.portrait.and.arrow.forward")
+            HStack(alignment:.center){
+                Image(systemName: (show_options == .options) ? "xmark": "rectangle.portrait.and.arrow.forward")
                     .padding()
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .opacity(show_options == .hidden ? 0 : 1)
                     .onTapGesture {
                         withAnimation(.spring) {
-                            show_options.toggle()
+                            switch show_options {
+                            case .hidden:
+                                break
+                            case .options:
+                                show_options = .home
+                            case .home:
+                                show_options = .options
+                            }
                         }
                     }
             }
-            .padding()
-            .frame(width: GeometryProxy.size.width, alignment:.trailing)
-            .scaleEffect(show_this_command ? 0 : 1)
+            .padding(.horizontal, 20)
+            .frame(width: GeometryProxy.size.width, height: 50, alignment: .trailing)
+            //.padding(.top, 70)
            
-            if show_this_command{
-                #warning("To do again this view")
-                CommandInDetail(commande: commandToView, client: utilisateur.this, show: $show_this_command)
+            if !commandToView.isNil{
+                CommandInDetail(commande: $commandToView, client: utilisateur.this)
                     .onAppear{
-                        withAnimation {userdata.taskbar = false}
+                        withAnimation {
+                            
+                            userdata.taskbar = false
+                        }
                     }
+                    .onDisappear{
+                        show_options = .home
+                    }
+                    
+                /*
                     .onDisappear {
-                        withAnimation {userdata.taskbar = true}
-                    }
+                        withAnimation {
+                            Task{
+                                await commande.fetchForuser(utilisateur.this)
+                            }
+                            userdata.taskbar = true
+                        }
+                    }*/
             }
+            
+            
         })
+        //.ignoresSafeArea(.container)
         .environmentObject(focusState)
         .background()
         .onAppear{
@@ -270,55 +219,6 @@ struct AccountView: View{
     }
     
     @State var selectedADS:Int = 3
-    @ViewBuilder
-    func BackgroundFadeColor(_ proxyScroll:CGSize)->some View{
-        GeometryReader { Proxy in
-            let minY = Proxy.frame(in: .named("scroll")).minY
-            var progress = minY / (proxyScroll.height * 0.6)
-            ZStack(alignment:.top){
-                
-               /// backgroundImageSwitcher()
-               AsyncImage(url: URL(string: "http://express.heanlab.com/getimage?name=pub")) { image in
-                   image
-                       .resizable()
-                       .scaledToFill()
-                       .scaleEffect(progress > 0 ? progress + 1 : 1)
-                       
-                   
-               } placeholder: {
-                   Image("page 4")
-                       .resizable()
-                       .scaledToFill()
-                       .scaleEffect(progress > 0 ? progress + 1 : 1)
-               }
-               
-            }
-            .ignoresSafeArea(.all)
-            .frame(maxWidth: .infinity)
-            .offset(y : -minY) // L'image reste figée
-            .overlay(content: {
-                let themColor:Color = colorscheme == .dark ? .black : .white
-                ZStack (alignment: .center, content: {
-                    Rectangle().fill(.linearGradient(colors: [themColor.opacity(0 - progress),
-                                                              themColor.opacity(0.1 - progress),
-                                                              themColor.opacity(0.2 - progress),
-                                                              themColor.opacity(0.5 - progress),
-                                                              themColor.opacity(0.7 - progress),
-                                                              themColor.opacity(1),]
-                                                     , startPoint: .top, endPoint: .bottom))
-                    .scaleEffect(progress > 0 ? progress + 1 : 1)
-                    .opacity(minY == 0 ? 1 : (1 - progress))
-                    .offset(y: -minY)
-                    
-                    
-                })
-                .ignoresSafeArea(.all)
-                .scaleEffect(progress > 0 ? progress + 1 : 1)
-            })
-            
-            
-        }
-    }
     
     @ViewBuilder
     func Infos() -> some View{

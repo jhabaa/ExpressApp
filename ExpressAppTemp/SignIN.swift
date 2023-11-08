@@ -34,6 +34,7 @@ struct IdentifiablePlace: Identifiable {
 struct SignIN: View {
     @Namespace var namespace
     @EnvironmentObject var fetchModels:FetchModels
+    @EnvironmentObject var appSettings:AppSettings
     @StateObject private var focusState = focusObjects()
     @EnvironmentObject var utilisateur:Utilisateur
     @State private var page:SignIn_pages = SignIn_pages()
@@ -85,7 +86,7 @@ struct SignIN: View {
             
             //Adress view
             if primary_infos{
-                AdressSelectorView(show: $_show)
+                AdressSelectorView(user: utilisateur.this, show: $_show)
             }else{
                 ScrollView{
                     Rectangle()
@@ -230,5 +231,6 @@ struct SignIN_Previews: PreviewProvider {
     static var previews: some View {
         SignIN( _show: .constant(true), place: IdentifiablePlace(lat: 50.7069, long: 4.37539)).environmentObject(UserData())
             .environmentObject(Utilisateur())
+            .environmentObject(AppSettings())
     }
 }

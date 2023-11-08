@@ -28,10 +28,48 @@ struct UserAllView: View {
             let size = $0.size
             NavigationView {
                 List(){
+                    Section {
+                        if !searchText.isEmpty{
+                                withAnimation {
+                                    Section{
+                                        ForEach (utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){ index in
+                                            if(index.name.capitalized.contains(searchText)){
+                                                HStack{
+                                                    AsyncImage(url: URL(string: "http://\(urlServer):\(urlPort)/getimage?name=\(index.name)") , content: { image in
+                                                        image.resizable().scaledToFill()
+                                                    }, placeholder: {
+                                                        ProgressView()
+                                                    })
+                                                    .frame(width: 50, height: 50).foregroundColor(.gray)
+                                                    Divider()
+                                                    VStack{
+                                                        HStack{
+                                                            Text(index.name).font(.title2).bold()
+                                                            Text(index.surname).font(.title3)
+                                                            Spacer()
+                                                        }
+                                                        HStack{
+                                                            Text("#\(index.id.formatted())").font(.caption)
+                                                            Spacer()
+                                                        }
+                                                    }
+                                                    Spacer()
+                                                }
+                                            }
+                                        }
+                                    } header: {
+                                        Text("Resultats de recherche")
+                                    }.transition(.slide)
+                                }
+                                
+                            }
+                                
+                           Text("Tous les utilisateurs")
+                        }
                     Section{
                         ForEach(utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){ u in
                             NavigationLink {
-                                UserDetailView(userToReview: u)
+                                UserDetailView(user: u)
                             } label: {
                                 HStack{
                                     VStack{
@@ -72,80 +110,16 @@ struct UserAllView: View {
                             }
                             
                         }
-                    } header:{
-                        //Zone de recherche ===========================================================================================
-                        
-                        VStack{
-                            HStack{
-                                TextField(text: $searchText) {
-                                    Text("Rechercher un utilisateur").font(Font.system(size: 20, weight: .light, design: Font.Design.rounded))
-                                        .padding().scaledToFill()
-                                }
-                                .textInputAutocapitalization(.never)
-                                .disableAutocorrection(true)
-                                    .font(Font.system(size: 30, weight: .light, design: Font.Design.rounded))
-                                    .clipShape(Capsule())
-                                    .padding(.leading)
-                                //Search Button
-                                Button {
-                                    
-                                } label: {
-                                    Image(systemName: "magnifyingglass").scaledToFill()
-                                }.padding().background(.blue).clipShape(Circle()).foregroundColor(.white)
-                            }
-                            
-                        }
-                        .shadow(radius: 10)
-                        .background().clipShape(Capsule())
-                        .padding(.top, 50)
-                        //Resultats de recherches. La fonction est locale recherche les noms
-                        
-                        if !searchText.isEmpty{
-                                withAnimation {
-                                    Section{
-                                        ForEach (utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){ index in
-                                            if(index.name.capitalized.contains(searchText)){
-                                                HStack{
-                                                    AsyncImage(url: URL(string: "http://\(urlServer):\(urlPort)/getimage?name=\(index.name)") , content: { image in
-                                                        image.resizable().scaledToFill()
-                                                    }, placeholder: {
-                                                        ProgressView()
-                                                    })
-                                                    .frame(width: 50, height: 50).foregroundColor(.gray)
-                                                    Divider()
-                                                    VStack{
-                                                        HStack{
-                                                            Text(index.name).font(.title2).bold()
-                                                            Text(index.surname).font(.title3)
-                                                            Spacer()
-                                                        }
-                                                        HStack{
-                                                            Text("#\(index.id.formatted())").font(.caption)
-                                                            Spacer()
-                                                        }
-                                                    }
-                                                    Spacer()
-                                                }
-                                            }
-                                        }
-                                    } header: {
-                                        Text("Resultats de recherche")
-                                    }.transition(.slide)
-                                }
-                                
-                            }
-                                
-                           Text("Tous les utilisateurs")
-                        }
-                
+                    }
                     
-                }
-                .edgesIgnoringSafeArea(.top)
+                    }
+                //.edgesIgnoringSafeArea(.top)
             }
             
             //.ignoresSafeArea(.top)
             .background(.ultraThinMaterial)
             .listStyle(.inset)
+            .searchable(text: $searchText, prompt: Text("Rechercher un utilisateur"))
             /*
             .fullScreenCover(isPresented: $moreInfos) {
                 UserDetailView()

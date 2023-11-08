@@ -15,6 +15,7 @@ struct HomeView: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var article:Article
     @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var alerte:Alerte
     @Environment(\.colorScheme) var colorscheme
     @Namespace var animation:Namespace.ID
     @Namespace var namespace
@@ -54,22 +55,13 @@ struct HomeView: View {
                         
                     }
                     VStack{
-                        
-                        
-                        /*
-                         Categories()
-                         .offset(y:-frameY)
-                         .opacity(minY)
-                         */
-                        //.padding(.top, 200)
-                        //Liste des services associés
                         VStack(alignment:.leading){
                             ServicesList()
                         }.padding(.top, 10)
                             .zIndex(3)
                             .frame(alignment: .leading)
                         Divider()
-                            .padding(.bottom, 330)
+                            .padding(.bottom, searchForService.isEmpty ? 330 : 100)
                     }
                     .offset(y: searchForService.isEmpty ? 320 : 0)
                     .animation(.spring(), value: searchForService)
@@ -80,9 +72,9 @@ struct HomeView: View {
                     withAnimation(.interactiveSpring()){
                         userdata.taskbar = true
                     }
-                    
                 }
             }
+            SearchResults()
             HeaderView(proxyScroll:Size)
             
             
@@ -111,9 +103,7 @@ struct HomeView: View {
                 }
                 
             }
-            
-            
-            
+
             if showPage{
                 withAnimation(.interactiveSpring(blendDuration: 0.4)) {
                     ArticleView(show_page: $showPage)
@@ -126,21 +116,47 @@ struct HomeView: View {
                 }
             }
             
-            
         }
         .background()
-        /*
-         .background{
-         VStack{
-         Circle().scale(0.5).fill(.white.opacity(0.5))
-         .blur(radius: 30, opaque: false)
-         .shadow(color: .blue, radius: 90)
-         .offset(x:-80,y:-300)
-         }
-         .frame(maxWidth: 450, maxHeight: .infinity)
-         .background()
-         }
-         */
+    }
+    @ViewBuilder
+    func SearchResults()->some View{
+        GeometryReader(content: { geometry in
+            VStack{
+                ForEach(article.SortBy(searchForService).sorted(by: {$0.id < $1.id}), id: \.self) { card in
+                    VStack(alignment:.leading){
+                        Text("\(card.name) ")
+                            .font(.title3)
+                            .bold()
+                        HStack{
+                            Text("\(card.categories)")
+                            Spacer()
+                            Text("\(card.cost.formatted(.currency(code: "EUR")))")
+                                .padding(.horizontal)
+                        }
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                    }
+                    .padding(.horizontal, 20)
+                    .onTapGesture {
+                        Task{
+                            //currentArticle = card
+                            withAnimation(.spring()){
+                                showPage = article.set(card)
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 300, alignment:.center)
+            .background{
+                RoundedRectangle(cornerRadius: 50, style: .continuous)
+                    .fill(.bar)
+                    .padding()
+            }
+        })
+        .ignoresSafeArea()
+        
     }
     
     @ViewBuilder
@@ -201,7 +217,7 @@ struct HomeView: View {
                 .font(.custom("ubuntu", size: 20))
                 .foregroundStyle(.gray)
                 .padding(.horizontal, 40)
-                .background(.bar)
+                .background(.ultraThickMaterial)
                 .clipShape(Capsule())
                 .frame(height: 80)
             }
@@ -221,6 +237,9 @@ struct HomeView: View {
             .frame(height: $0.safeAreaInsets.top)
             //.ignoresSafeArea(.all, edges: .top)
             .padding(.vertical)
+            //MARK: Mask if alert is showed
+            .opacity(alerte.type == .amber ? 0 : 1)
+            .animation(.easeInOut, value: alerte.type)
             
         }
         .ignoresSafeArea(.container)
@@ -229,141 +248,108 @@ struct HomeView: View {
     @State var currentNumberInView:Int=2
     @ViewBuilder
     func ServicesList() -> some View {
-        VStack{
-            ForEach(article.categories_services.sorted(by: {$0.key < $1.key}), id: \.key){ serviceInCategory in
-                ZStack(alignment: .top) {
-                    Text(serviceInCategory.key)
-                        .font(.custom("BebasNeue", size: 100))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.1)
-                        .offset(y:-70)
-                        .scaleEffect(searchForService.isEmpty ? 1 : 0)
-                        .opacity(0.5)
-                    
-                    let numberOfItems:Int = serviceInCategory.value.count
-                    Section {
-                        if searchForService.isEmpty{
-                            if numberOfItems > 4{
-                                let block = serviceInCategory.value.sorted(by: {$0.id < $1.id})
-                                LazyVGrid(columns:[GridItem(), GridItem()]) {
-                                    ForEach(0...currentNumberInView, id:\.self){
-                                        let service = block[$0]
-                                        Button(action: {
-                                            Task{
-                                                //currentArticle = card
-                                                withAnimation(.spring()){
-                                                    showPage = article.set(service)
-                                                }
-                                            }
-                                        }, label: {
-                                            VStack(alignment:.center){
-                                                VStack(alignment: .center, spacing: 5) {
-                                                    Spacer()
-                                                    VStack{
-                                                        Text("\(service.name)")
-                                                            .font(.custom("Ubuntu", size: 20))
-                                                            .padding(.horizontal)
-                                                        Text("\(service.cost.formatted(.currency(code: "EUR")))")
-                                                            .padding(.horizontal)
+        ZStack{
+            VStack{
+                ForEach(article.categories_services.sorted(by: {$0.key < $1.key}), id: \.key){ serviceInCategory in
+                    ZStack(alignment: .top) {
+                        Text(serviceInCategory.key)
+                            .font(.custom("BebasNeue", size: 100))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.1)
+                            .offset(y:-70)
+                            .scaleEffect(searchForService.isEmpty ? 1 : 0)
+                            .opacity(0.5)
+                        
+                        let numberOfItems:Int = serviceInCategory.value.count
+                        Section {
+                            if searchForService.isEmpty{
+                                if numberOfItems > 4{
+                                    let block = serviceInCategory.value.sorted(by: {$0.id < $1.id})
+                                    LazyVGrid(columns:[GridItem(), GridItem()]) {
+                                        ForEach(0...currentNumberInView, id:\.self){
+                                            let service = block[$0]
+                                            Button(action: {
+                                                Task{
+                                                    //currentArticle = card
+                                                    withAnimation(.spring()){
+                                                        showPage = article.set(service)
                                                     }
-                                                    .padding(.horizontal,2)
-                                                    .padding(.vertical, 5)
-                                                    .background(Material.bar.shadow(ShadowStyle.drop(radius: 10)))
-                                                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                                                    .offset(y:-20)
                                                 }
-                                                .frame(maxWidth: .infinity, alignment:.center)
-                                            }
-                                            
-                                            //.shadow(radius: 5)
-                                            .frame(height:120*16/9)
-                                            .background{
-                                                Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
-                                                    .resizable()
-                                                    .clipped()
-                                                    .scaledToFill()
-                                                //.frame(maxWidth: 150)
-                                                //.offset(x:0, y:-10)
-                                                //.matchedGeometryEffect(id: "service", in: namespace)
-                                            }
-                                            .background(Material.ultraThin.shadow(ShadowStyle.drop(radius: 20)))
-                                            .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
-                                            .padding(.bottom,10)
-                                        })
-                                        .tint(.primary)
-                                        .shadow(color: .gray, radius: 5)
-                                    }
-                                    
-                                    // + Button to see more or less
-                                    Button {
-                                        if currentNumberInView < numberOfItems-1{
-                                            currentNumberInView = numberOfItems - 1
-                                        }else{
-                                            currentNumberInView = 2
+                                            }, label: {
+                                                VStack(alignment:.center){
+                                                    VStack(alignment: .leading, spacing: 0) {
+                                                        Spacer()
+                                                        VStack{
+                                                            Text("\(service.name)")
+                                                                .font(.largeTitle)
+                                                                .bold()
+                                                            Text(service.description)
+                                                                .font(.caption2)
+                                                                .lineLimit(2)
+                                                                .multilineTextAlignment(.leading)
+                                                            HStack(spacing:0){
+                                                                Text("\(service.cost.formatted(.currency(code: "EUR")))")
+                                                                Text("\(service.ByMeters ? "/m\u{00b2}" : "")")
+                                                            }
+                                                            .bold()
+                                                            
+                                                        }
+                                                        .padding(.horizontal,2)
+                                                        .padding(.vertical, 5)
+                                                        .foregroundStyle(.white)
+                                                    }
+                                                    .frame(maxWidth: .infinity, alignment:.leading)
+                                                }
+                                                
+                                                //.shadow(radius: 5)
+                                                .frame(height:120*16/9)
+                                                .background{
+                                                    ZStack {
+                                                        Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
+                                                            .resizable()
+                                                            .clipped()
+                                                            .scaledToFill()
+                                                        RoundedRectangle(cornerRadius: 20)
+                                                            .fill(LinearGradient(colors: [
+                                                                .black.opacity(0.5),
+                                                                .black.opacity(0.2),
+                                                                .clear]
+                                                                                 ,startPoint: .bottom, endPoint: .top))
+                                                    }
+                                                }
+                                                .background(Material.ultraThin.shadow(ShadowStyle.drop(radius: 20)))
+                                                .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
+                                                .padding(.bottom,10)
+                                            })
+                                            .tint(.primary)
+                                            .shadow(color: .gray, radius: 5)
                                         }
-                                    } label: {
-                                        VStack(spacing:2){
-                                            Image(systemName: currentNumberInView < numberOfItems-1 ? "plus.circle.fill" : "minus.circle.fill")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 80)
-                                            
-                                            
-                                            Text(currentNumberInView == 2 ? "Voir plus" : "Voir moins")
-                                        }
-                                        .tint(Color("xpress"))
                                         
-                                    }
-                                }
-                            }else{
-                                if numberOfItems == 1{
-                                    // Show articles in grid
-                                    ForEach(serviceInCategory.value.sorted(by: {$0.id < $1.id}), id:\.self) { service in
+                                        // + Button to see more or less
                                         Button {
-                                            Task{
-                                                //currentArticle = card
-                                                withAnimation(.spring()){
-                                                    showPage = article.set(service)
-                                                }
+                                            if currentNumberInView < numberOfItems-1{
+                                                currentNumberInView = numberOfItems - 1
+                                            }else{
+                                                currentNumberInView = 2
                                             }
                                         } label: {
-                                            VStack(alignment:.center){
-                                                VStack(alignment: .center, spacing: 5) {
-                                                    Spacer()
-                                                    VStack{
-                                                        Text("\(service.name)")
-                                                            .font(.custom("Ubuntu", size: 20))
-                                                            .padding(.horizontal)
-                                                        Text("\(service.cost.formatted(.currency(code: "EUR")))")
-                                                            .padding(.horizontal)
-                                                    }
-                                                    .padding(.horizontal,2)
-                                                    .padding(.vertical, 5)
-                                                    .background(Material.bar)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                                                    .offset(y:-20)
-                                                }
-                                                .frame(maxWidth: .infinity, alignment:.center)
-                                            }
-                                            //.shadow(radius: 5)
-                                            .frame(height: 250)
-                                            .background{
-                                                Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
+                                            VStack(spacing:2){
+                                                Image(systemName: currentNumberInView < numberOfItems-1 ? "plus.circle.fill" : "minus.circle.fill")
                                                     .resizable()
-                                                    .clipped()
-                                                    .scaledToFill()
+                                                    .scaledToFit()
+                                                    .frame(width: 80)
+                                                
+                                                
+                                                Text(currentNumberInView == 2 ? "Voir plus" : "Voir moins")
                                             }
-                                            .background(Material.ultraThin)
-                                            .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
-                                            .padding(.bottom,10)
+                                            .tint(Color("xpress"))
+                                            
                                         }
-                                        .tint(.primary)
-                                        .shadow(color: .gray, radius: 5)
                                     }
-                                }else
-                                if numberOfItems > 1{
-                                    LazyVGrid(columns: gridLayout) {
-                                        ForEach(serviceInCategory.value.sorted(by: {$0.id < $1.id}), id:\.self){ service in
+                                }else{
+                                    if numberOfItems == 1{
+                                        // Show articles in grid
+                                        ForEach(serviceInCategory.value.sorted(by: {$0.id < $1.id}), id:\.self) { service in
                                             Button {
                                                 Task{
                                                     //currentArticle = card
@@ -373,34 +359,46 @@ struct HomeView: View {
                                                 }
                                             } label: {
                                                 VStack(alignment:.center){
-                                                    VStack(alignment: .center, spacing: 5) {
+                                                    VStack(alignment: .leading, spacing: 5) {
                                                         Spacer()
-                                                        VStack{
+                                                        VStack(alignment:.leading,spacing:0){
                                                             Text("\(service.name)")
-                                                                .font(.custom("Ubuntu", size: 20))
-                                                                .padding(.horizontal)
-                                                            Text("\(service.cost.formatted(.currency(code: "EUR")))")
-                                                                .padding(.horizontal)
+                                                                .font(.largeTitle)
+                                                                .bold()
+                                                            Text(service.description)
+                                                                .font(.caption2)
+                                                                .lineLimit(2)
+                                                                .multilineTextAlignment(.leading)
+                                                            HStack(spacing:0){
+                                                                Text("\(service.cost.formatted(.currency(code: "EUR")))")
+                                                                Text("\(service.ByMeters ? "/m\u{00b2}" : "")")
+                                                            }
+                                                            .bold()
                                                         }
                                                         .padding(.horizontal,2)
                                                         .padding(.vertical, 5)
-                                                        .background(Material.bar)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                                                        .offset(y:-20)
+                                                        .foregroundStyle(.white)
+                                                        
+                                                        
                                                     }
-                                                    .frame(maxWidth: .infinity, alignment:.center)
+                                                    .frame(maxWidth: .infinity, alignment:.leading)
                                                 }
-                                                
                                                 //.shadow(radius: 5)
                                                 .frame(height: 250)
                                                 .background{
+                                                    
                                                     Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
                                                         .resizable()
                                                         .clipped()
                                                         .scaledToFill()
-                                                    //.frame(maxWidth: 150)
-                                                    //.offset(x:0, y:-10)
-                                                    //.matchedGeometryEffect(id: "service", in: namespace)
+                                                        .overlay {
+                                                            RoundedRectangle(cornerRadius: 20)
+                                                                .fill(LinearGradient(colors: [
+                                                                    .black.opacity(0.5),
+                                                                    .black.opacity(0.2),
+                                                                    .clear]
+                                                                                     ,startPoint: .bottom, endPoint: .top))
+                                                        }
                                                 }
                                                 .background(Material.ultraThin)
                                                 .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
@@ -409,59 +407,77 @@ struct HomeView: View {
                                             .tint(.primary)
                                             .shadow(color: .gray, radius: 5)
                                         }
+                                    }else
+                                    if numberOfItems > 1{
+                                        LazyVGrid(columns: gridLayout) {
+                                            ForEach(serviceInCategory.value.sorted(by: {$0.id < $1.id}), id:\.self){ service in
+                                                Button {
+                                                    Task{
+                                                        withAnimation(.spring()){
+                                                            showPage = article.set(service)
+                                                        }
+                                                    }
+                                                } label: {
+                                                    VStack(alignment:.leading){
+                                                        VStack(alignment: .leading, spacing: 5) {
+                                                            Spacer()
+                                                            VStack(alignment:.leading,spacing:0){
+                                                                Text("\(service.name)")
+                                                                    .font(.title)
+                                                                    .bold()
+                                                                    .shadow(radius: 5)
+                                                                    .multilineTextAlignment(.leading)
+                                                                    .minimumScaleFactor(0.3)
+                                                                    .lineLimit(2)
+                                                                Text(service.description)
+                                                                    .font(.caption2)
+                                                                    .multilineTextAlignment(.leading)
+                                                                    .lineLimit(1)
+                                                                HStack(spacing:0){
+                                                                    Text("\(service.cost.formatted(.currency(code: "EUR")))")
+                                                                    Text("\(service.ByMeters ? "/m\u{00b2}" : "")")
+                                                                }
+                                                                .bold()
+                                                            }
+                                                            .padding(.bottom, 5)
+                                                            .foregroundStyle(.white)
+                                                        }
+                                                        .frame(maxWidth: .infinity,maxHeight:.infinity, alignment:.topLeading)
+                                                    }
+                                                    
+                                                    //.shadow(radius: 5)
+                                                    .frame(height: 250)
+                                                    .background{
+                                                        ZStack {
+                                                            Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
+                                                                .resizable()
+                                                                .clipped()
+                                                                .scaledToFill()
+                                                            RoundedRectangle(cornerRadius: 20)
+                                                                .fill(LinearGradient(colors: [
+                                                                    .black.opacity(0.5),
+                                                                    .black.opacity(0.2),
+                                                                    .clear]
+                                                                                     ,startPoint: .bottom, endPoint: .top))
+                                                        }
+                                                    }
+                                                    .background(Material.ultraThin)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
+                                                    .padding(.bottom,10)
+                                                }
+                                                .tint(.primary)
+                                                .shadow(color: .gray, radius: 5)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                        .padding(.horizontal, 5)
                     }
-                    .padding(.horizontal, 5)
-                }
-                .padding(.bottom)
-            }
-            if !searchForService.isEmpty{
-                ForEach(article.SortBy(searchForService).sorted(by: {$0.id < $1.id}), id: \.self) { card in
-                    VStack(alignment:.center){
-                        VStack(alignment: .center, spacing: 5) {
-                            Spacer()
-                            VStack{
-                                Text("\(card.name) " + "(\(card.categories))")
-                                    .font(.custom("Ubuntu", size: 20))
-                                    .padding(.horizontal)
-                                Text("\(card.cost.formatted(.currency(code: "EUR")))")
-                                    .padding(.horizontal)
-                            }
-                            .padding(.horizontal,2)
-                            .padding(.vertical, 5)
-                            .background(Material.bar)
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
-                            .offset(y:-20)
-                        }
-                        .frame(maxWidth: .infinity, alignment:.center)
-                    }
-                    
-                    //.shadow(radius: 5)
-                    .frame(height: 250)
-                    .background{
-                        Image(uiImage: (article.images[card.illustration] ?? UIImage(named: "logo120"))!)
-                            .resizable()
-                            .clipped()
-                            .scaledToFill()
-                    }
-                    .background(Material.ultraThin)
-                    .clipShape(RoundedRectangle(cornerRadius: 20), style: .init(eoFill: true))
-                    .padding(.bottom,10)
-                    .onTapGesture {
-                        Task{
-                            //currentArticle = card
-                            withAnimation(.spring()){
-                                showPage = article.set(card)
-                            }
-                        }
-                    }
+                    .padding(.bottom)
                 }
             }
-            
-            
         }
         .padding(.bottom, 100)
         
@@ -638,5 +654,6 @@ struct HomeView_Previews: PreviewProvider {
             .environmentObject(FetchModels())
             .environmentObject(Article())
             .environmentObject(Utilisateur())
+            .environmentObject(Alerte())
     }
 }

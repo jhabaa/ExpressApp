@@ -33,94 +33,101 @@ struct ArticleView: View {
                     .scaledToFill()
                     .clipped()
                     .frame(maxWidth: size.width, maxHeight: .infinity)
-                VStack{
-                    
-                }
+                VStack{}
                 .frame(maxWidth: size.width, maxHeight: .infinity)
                 .background(LinearGradient(colors: [
-                colorscheme == .dark ? .black.opacity(0) : .white.opacity(0),
-                colorscheme == .dark ? .black.opacity(1) : .white.opacity(1)
-                ], startPoint: .top, endPoint:.bottom))
+                colorscheme == .dark ? .black.opacity(1) : .white.opacity(1),
+                colorscheme == .dark ? .black.opacity(0) : .white.opacity(0)
+                ], startPoint: .bottom, endPoint:.center))
+
                 
-                //MARK: Quantity selector
-                VStack{
-                    Text("Quantité")
-                        .bold()
-                        .shadow(radius: 2)
-                    Picker("Quantité", selection: $achat.quantity) {
-                        withAnimation() {
-                            ForEach(0...100,id: \.self) {
-                                Text(" \($0)").tag($0)
-                                    //.font(achat.quantity == $0 ? .largeTitle : .callout)
-                                    //.foregroundStyle(achat.quantity == $0 ? .blue : .white)
-                            }
-                        }
-                       
-                    }
-                    .pickerStyle(.wheel)
-                    .frame(width: 60)
-                    .labelStyle(.titleAndIcon)
-                    .padding(1)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .shadow(radius: 5)
-                }
-                
-                .animation(.spring(), value: quantity)
-                .padding(.horizontal, 10)
             }
             .frame(maxWidth: size.width)
             
             // Description and others
             VStack(alignment:.leading){
-                // Process time
-                Label("\(article.this.time) jours pour la livraison", systemImage: "info.circle")
-                    .font(Font.custom("Ubuntu", size: 10.0))
-                    .shadow(color: Color("fond"), radius: 10)
-                    .tint(.gray)
-                    .underline()
+                
 
                 
                 // Article Name
-                HStack(alignment: .top) {
-                    Text("\(article.this.name)")
-                        .font(Font.custom("BebasNeue", size: 50.0))
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.2)
-                        .shadow(radius: 3)
+                HStack(alignment: .bottom) {
+                    VStack{
+                        // Process time
+                        Label("\(article.this.time) jours pour la livraison", systemImage: "info.circle")
+                            .font(Font.custom("Ubuntu", size: 10.0))
+                            .shadow(color: Color("fond"), radius: 10)
+                            .tint(.gray)
+                            .underline()
+                        Text("\(article.this.name)")
+                            .font(Font.custom("BebasNeue", size: 50.0))
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.2)
+                            .shadow(radius: 3)
+                    }
+                    .animation(.spring(), value: achat.quantity)
+                    Spacer(minLength: 50)
+                    //MARK: Quantity selector
+                    VStack{
+                        Text("Quantité")
+                            .bold()
+                            .shadow(radius: 5)
+                            
+                        Picker("Quantité", selection: $achat.quantity) {
+                            withAnimation() {
+                                ForEach(0...100,id: \.self) {
+                                    Text(" \($0)").tag($0)
+                                        //.font(achat.quantity == $0 ? .largeTitle : .callout)
+                                        //.foregroundStyle(achat.quantity == $0 ? .blue : .white)
+                                }
+                            }
+                           
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 60)
+                        .labelStyle(.titleAndIcon)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                        .shadow(radius: 5)
+                    }
+                    
+                    .animation(.spring(), value: quantity)
+                    .padding(.horizontal, 10)
                 }
                 //Description
-                HStack{
-                    Text(article.this.description)
-                    //.background(.thinMaterial)
-                    //.clipShape(RoundedRectangle(cornerRadius: 10))
-                    .font(Font.custom("Ubuntu", size: 13.0))
-                    //.multilineTextAlignment(.leading)
-                    
+                if article.this.withDescription{
+                    HStack{
+                        Text(article.this.description)
+                        .font(Font.custom("Ubuntu", size: 13.0))
+                    }
+                    .frame(maxWidth: .infinity, alignment:.leading)
+                    .animation(.spring(), value: achat.quantity)
                 }
-                .frame(maxWidth: .infinity, alignment:.leading)
+                
                 
                 //caution
-                if article.this.description.contains("kilo"){
-                    GroupBox(content: {
-                        Text("Nos experts se chargeront d'estimer le poids exact")
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.4)
-                            
-                    }, label: {
-                        Label("Info", systemImage: "info.circle")
-                    })
+                if article.this.ByMeters{
+                    
+                    Label("Nos experts se chargeront d'estimer le poids exact", systemImage: "info.circle")
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.4)
                     .background(.thinMaterial)
                     .padding(.horizontal)
-                    .font(.caption)
+                    .font(.caption2)
+                    .multilineTextAlignment(.leading)
+                    .animation(.spring(), value: achat.quantity)
                 }
+                
                 //MARK: Price
                 VStack(alignment: .leading, spacing: 0) {
-                    var total = Decimal(achat.quantity) * article.this.cost
-                    Text("\((article.this.cost).formatted(.currency(code: "EUR")))").font(.custom("BebasNeue", size: 30)).bold()
-                        //.shadow(color: colorscheme == .dark ? .white : .black, radius: 10)
-                        .shadow(radius: 5)
+                    let total = Decimal(achat.quantity) * article.this.cost
+                    HStack{
+                        Text("\((article.this.cost).formatted(.currency(code: "EUR")))")
+                            //.shadow(color: colorscheme == .dark ? .white : .black, radius: 10)
+                            .shadow(radius: 5)
+                        Text("\(article.this.ByMeters ? "/m\u{00b2}" : "")")
+                    }
+                    .font(.custom("BebasNeue", size: 30)).bold()
                     //MARK: Total Price
                     HStack{
                         Text("x\(achat.quantity) unités")
@@ -131,16 +138,15 @@ struct ArticleView: View {
                     }
                     
                 }
-                
+                .animation(.spring(), value: achat.quantity)
                 //MARK: To buy button
                     HStack(alignment:.center){
                         Button {
                             commande.toCart(achat)
                             //Show notification
-                            alerte.this.text = "Article ajouté"
-                            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 2, execute: {
-                                alerte.this.text = String()
-                            })
+                            #warning("Look here")
+                            alerte.NewNotification(.amber, "\(achat.quantity) \(achat.service.name) ajoutés au panier. Merci pour votre confiance", UIImage(systemName: "cart.fill.badge.plus"))
+                            
                             //close view
                             withAnimation {
                                 show_page = false
@@ -158,9 +164,9 @@ struct ArticleView: View {
                         .padding()
                     }
                     .minimumScaleFactor(0.4)
+                    .padding(.top, achat.quantity > 0 ? 0 : -200)
                     .scaleEffect(achat.quantity > 0 ? 1:0,anchor: UnitPoint.center)
                     .animation(.spring(), value: achat.quantity)
-                
             }
             .frame(maxWidth: size.width, maxHeight: size.height, alignment:.bottom)
             .padding(.vertical, 50)
@@ -186,7 +192,6 @@ struct ArticleView: View {
             .padding(.top, 70)
             
         }
-        //.background(Color("xpress").opacity(0.2).gradient)
         .background(.bar)
         .ignoresSafeArea()
         .onAppear{

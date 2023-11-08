@@ -66,14 +66,7 @@ struct AdminView: View {
                 .tabItem{
                     Label("Reglages", systemImage: "gear")
                 }
-            /*
-            DateManagementView()
-                .tabItem{
-                    Label("Calendrier", systemImage: "calendar")
-                }
-            */
         }
-        
         .tint(Color("xpress"))
 
 

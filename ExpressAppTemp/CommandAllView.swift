@@ -27,6 +27,7 @@ struct CommandAllView: View {
     @EnvironmentObject var utilisateur:Utilisateur
     @EnvironmentObject var article:Article
     @EnvironmentObject var daysOff:Days
+    @EnvironmentObject var alerte:Alerte
     @State var commandList:[GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
     @State var selectedCommand:Command = Command.init()
     @State var showDetailCommand:Bool = false
@@ -50,14 +51,6 @@ struct CommandAllView: View {
             let size = GeometryProxy.size
             let minY = GeometryProxy.frame(in: .named("calendar")).minY
             List {
-                /*
-                 CalendarPart(size)
-                 
-                 
-                 .padding(0)
-                 .listRowSeparator(Visibility.hidden)
-                 */
-                
                 Section() {
                     if WorkToday{
                         if (selectDaysOff){
@@ -98,16 +91,15 @@ struct CommandAllView: View {
                                     Button("Valider"){
                                         Task{
                                             let r = await daysOff.push(startDate)
-                                            print(r)
                                             if r{
                                                 startDate = "2000/01/01".toDate()
                                                 endDate = "2000/01/01".toDate()
                                             }
+                                            alerte.NewNotification(.amber, "\(startDate) ajouté aux jours fériés", UIImage(systemName: "calendar.badge.plus"))
                                             //update
                                             _ = await daysOff.Retrieve_daysOff()
                                         }
                                         selectDaysOff = false
-                                        
                                     }
                                 }
                                 
@@ -117,20 +109,16 @@ struct CommandAllView: View {
                                             for d in startDate.datesTil(endDate){
                                                 let r = await daysOff.push(d)
                                             }
-                                            
                                             //update
                                             await daysOff.Retrieve_daysOff()
                                         }
+                                        alerte.NewNotification(.amber, "Du \(startDate) au \(endDate) sont à présent fériés", UIImage(systemName: "calendar.badge.checkmark"))
                                         selectDaysOff = false
-                                        
                                     }
                                 }
-                                
-                                
                             }
                         }else{
                             ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
-                                
                                 Section {
                                     VStack {
                                         ForEach(commands_per_hour[hour]!, id: \.self) { com in
@@ -158,13 +146,7 @@ struct CommandAllView: View {
                                                 
                                                 HStack{
                                                     //icons
-                                                    if !state{
-                                                        Image(systemName: "arrow.up.circle.fill")
-                                                        
-                                                    }else{
-                                                        Image(systemName: "arrow.down.circle.fill")
-                                                    }
-                                                    
+                                                        Image(systemName: state ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                                                     VStack(alignment:.leading){
                                                         Text("\(utilisateur.userWithId(com.user!).surname) \(utilisateur.userWithId(com.user!).name)")
                                                             .font(.custom("Gotham-Black", size: 20))
@@ -181,8 +163,6 @@ struct CommandAllView: View {
                                                 .frame(height: 80)
                                                 .background(.thinMaterial)
                                             }
-                                            
-                                            
                                             .onTapGesture {
                                                 //To the trick : lets open the command interface
                                                 //selectedCommand = com
@@ -191,8 +171,6 @@ struct CommandAllView: View {
                                             }
                                         }
                                     }
-                                    
-                                    
                                     .ignoresSafeArea(edges: .horizontal)
                                 } header: {
                                     if !commands_per_hour[hour]!.isEmpty{
@@ -229,9 +207,7 @@ struct CommandAllView: View {
                     )
                     .padding(.top, 50)
                 }
-                
             }
-            
             .listStyle(.inset)
             .listRowBackground(Rectangle().fill(.red))
             .ignoresSafeArea(.all)
@@ -244,7 +220,6 @@ struct CommandAllView: View {
                 withAnimation(.spring()) {
                     currentDate = getCurrentMonth(currentMonth: currentMonth)
                 }
-                
             }
             .onChange(of: minY) { V in
                 print(minY)
@@ -262,9 +237,6 @@ struct CommandAllView: View {
                     .tint(.clear)
                     .foregroundStyle(.gray)
                 MultiDatePicker("", selection: $dates )
-                    .onChange(of: dates) { V in
-                        print(dates.min(by: {$0.date! < $1.date!}))
-                    }
                 
                 Button {
                     //MARK: Set dates as daysoff
@@ -285,6 +257,7 @@ struct CommandAllView: View {
                             }
                             
                         }
+                        alerte.NewNotification(.amber, "Dates ajoutées aux jours fériés", UIImage(systemName: "calendar.badge.plus"))
                     }
                     //update
                     Task{
@@ -418,10 +391,7 @@ struct CommandAllView: View {
                                 
                                 print(selectedDate)
                             }
-                            
-                            
                         }
-                        //   }
                     }
                 } header: {
                     //Mois et année
@@ -560,5 +530,6 @@ struct Previews_CommandAllView_Previews: PreviewProvider {
             .environmentObject(Commande())
             .environmentObject(Article())
             .environmentObject(Days())
+            .environmentObject(Alerte())
     }
 }

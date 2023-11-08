@@ -24,10 +24,9 @@ func RetrieveParameters()async -> Params?{
     }
     do {
         let (data, _) = try await URLSession.shared.data(from: url)
-        if let decodedResponse = try? JSONDecoder().decode([Params].self, from: data) {
-            return decodedResponse.first!
+        if let decodedResponse = try? JSONDecoder().decode(Params.self, from: data) {
+            return decodedResponse
         }
-        // more code to come
     } catch {
         print("Invalid data")
     }

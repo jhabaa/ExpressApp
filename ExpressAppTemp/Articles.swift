@@ -21,12 +21,31 @@ struct Service:Hashable, Codable{
     var illustration:String
     init() {
         self.id = 3
-        self.name = "Nom de l'article"
+        self.name = ""
         self.cost = Decimal()
-        self.categories = "Categorie"
-        self.time = 3
-        self.description = "Description de l'article"
+        self.categories = ""
+        self.time = Int.init()
+        self.description = "."
         self.illustration =  "default"
+    }
+    init(_ name:String) {
+        self.id = 3
+        self.name = name
+        self.cost = Decimal()
+        self.categories = "Chaussure"
+        self.time = Int.init()
+        self.description = "."
+        self.illustration =  "default"
+    }
+    
+    var withDescription:Bool{
+        return description.count > 3
+    }
+    
+    /// Return True if the service cost is relative to the lenght
+    var ByMeters:Bool{
+        /// Return True if the service cost is relative to the lenght
+        return description.localizedCaseInsensitiveContains("kilo") || description.localizedCaseInsensitiveContains("kilos")
     }
     
     //delete this service
@@ -47,6 +66,25 @@ struct Service:Hashable, Codable{
         }
     }
     
+    ///Function  to update a service
+    func Put_Service() async -> Bool{
+        guard let encoded = try? JSONEncoder().encode(self) else{
+            print("erreur d'encodage")
+            return false
+        }
+        let url = URL(string:"http://\(urlServer):\(urlPort)/updateservice")!
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-type")
+        request.httpMethod = "POST"
+        do{
+            let (data, _) = try await URLSession.shared.upload(for: request, from: encoded)
+            print("Updated Service")
+            return true
+        } catch{
+            print("Upload impossible")
+            return false
+        }
+    }
     
    
 }
@@ -59,10 +97,9 @@ final class Article:ObservableObject{
     @Published var categories_services:[String:[Service]]=[:]
     // FONCTIONS
     
-  
-    
+    ///Return true if the given service is correctly formatted
     func is_acceptable(_ service:Service)->Bool{
-        return true
+        return !self.all.contains(service) && !service.categories.isEmpty && !service.name.isEmpty && !service.cost.isZero
     }
     ///Function to get a Service by his ID
     func GetService(id:Int)->Service{
@@ -240,25 +277,7 @@ final class Article:ObservableObject{
         }
     }
     
-    ///Function  to update a service
-    func Put_Service(service:Service) async -> Bool{
-        guard let encoded = try? JSONEncoder().encode(service) else{
-            print("erreur d'encodage")
-            return false
-        }
-        let url = URL(string:"http://\(urlServer):\(urlPort)/updateservice")!
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Content-type")
-        request.httpMethod = "POST"
-        do{
-            let (data, _) = try await URLSession.shared.upload(for: request, from: encoded)
-            print("Updated Service")
-            return true
-        } catch{
-            print("Upload impossible")
-            return false
-        }
-    }
+
     
     
     

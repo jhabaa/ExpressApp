@@ -103,6 +103,9 @@ struct FirstScreen: View {
         case password
         case v_password
     }
+    enum connectionField{
+        case username, password
+    }
     enum adress_field:Hashable{
         case road
         case no
@@ -115,8 +118,9 @@ struct FirstScreen: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var appSettings:AppSettings
     @EnvironmentObject var utilisateur:Utilisateur
+    @EnvironmentObject var alerte:Alerte
     @Environment(\.colorScheme) var colorScheme
-    
+    @FocusState private var focusedArea: connectionField?
     @StateObject private var focusState = focusObjects()
     @FocusState var focustate:adress_field?
     @FocusState var focusField:user_field?
@@ -152,10 +156,10 @@ struct FirstScreen: View {
     @State var _adress:[String]=["","","","",""]
     @State private var keyboardHeight:CGFloat = 0
     @FocusState private var road_isfocused:Bool
+    @State var forgotPassword:Bool = false
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
-            
             VStack{
                 VStack{
                     //Boutons SignIn et continuer sans enregistrement
@@ -220,76 +224,99 @@ struct FirstScreen: View {
             if connectionPresentation{
                 VStack{
                     VStack{
-                        CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
-                                //.shadow(color: .secondary, radius: 5)
-                        
-                        
-                        //Password
-                            CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe"
-                                ,hideMode:false,
-                                type:.password)
-                            //.shadow(color: .secondary, radius: 5)
-
-                        //Bouton
-                        
-
-                        Button {
-                            Task {
-                                let response = await utilisateur.connect(user: utilisateur.this)
-                                if response{
-                                    print("connexion")
-                                    appSettings.connect()
-                                }
-                            }
-                        } label: {
-                            VStack{
-                                Text("Se Connecter").font(.system(size: 20))
-                                    .padding()
-                                    .foregroundStyle(colorScheme == .dark ? .black : .white)
-                            }
-                            .frame(maxWidth: .infinity)
+                        VStack{
+                            CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
+                                .focused($focusedArea, equals: .username)
+                                .submitLabel(.next)
                                 
+                                    //.shadow(color: .secondary, radius: 5)
+                            //Password
+                                CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe"
+                                    ,hideMode:false,
+                                    type:.password)
+                                .focused($focusedArea, equals: .password)
+                                .submitLabel(.continue)
+                                //.shadow(color: .secondary, radius: 5)
+                            //Bouton
+                            Button {
+                                appSettings.loading = true
+                                Task {
+                                    //MARK: Update the current user if datas are correct
+                                    utilisateur.this = await utilisateur.connect(user: utilisateur.this) ?? User()
+                                    //MARK: Error handler and loading
+                                    appSettings.connection_error = utilisateur.this.isEmpty
+                                    //MARK: If everything is okay lets change the view and keep out the loading page
+                                    if !appSettings.connection_error{
+                                        appSettings.connect() // Connect the user to the interface
+                                        alerte.NewNotification(.amber, "Bonjour \(utilisateur.this.name)", UIImage(systemName: "person.crop.circle.fill.badge.checkmark"))
+                                    }
+                                    appSettings.loading = false //Turn off the loading view
+                                    
+                                }
+                                
+                            } label: {
+                                VStack{
+                                    Text("Se Connecter").font(.system(size: 20))
+                                        .padding()
+                                        .foregroundStyle(colorScheme == .dark ? .black : .white)
+                                }
+                                .shadow(radius: 5)
+                                .frame(maxWidth: .infinity)
+                            }
+                            .padding()
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.roundedRectangle(radius: 10))
+                            .tint(colorScheme == .dark ? .white : .black)
                         }
-                        .padding()
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.roundedRectangle(radius: 10))
-                        .tint(colorScheme == .dark ? .white : .black)
+                        .padding(.horizontal, 30)
                         
-                        
+                        //MARK: Forgot password
+                        Button(action: {
+                            connectionPresentation.toggle()
+                            forgotPassword.toggle() // Toggle the forgot password alert
+                        }, label: {
+                            Text("Mot de passe oublié")
+                                .font(.caption)
+                                .underline()
+                                .foregroundStyle(.gray)
+                        })
+                       
+                        #warning("Have to implement this in the backend before activate")
                     }
-                    .padding(.horizontal, 30)
-                    .frame(maxWidth: .infinity, maxHeight:.infinity)
-                    //.frame(width: size.width, height: 300, alignment:.center)
-
-                    .ignoresSafeArea(.keyboard)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
+                    .shadow(radius: 2)
+                    .padding(20)
+                    .frame(maxWidth: 390)
+                   
+                    .ignoresSafeArea(.container)
                 }
-                .ignoresSafeArea(.keyboard, edges: Edge.Set.bottom)
+                .frame(maxWidth: .infinity, maxHeight:.infinity, alignment:.bottom)
+                .onSubmit {
+                    switch focusedArea {
+                    case .username:
+                        focusedArea = .password
+                    case .password:
+                        appSettings.loading = true
+                        Task {
+                            utilisateur.this = await utilisateur.connect(user: utilisateur.this) ?? User()
+                            appSettings.connection_error = utilisateur.this.isEmpty
+                            if !appSettings.connection_error{
+                                appSettings.connect() // Connect the user to the interface
+                                appSettings.loading = false //Turn off the loading view
+                            }
+                        }
+                    case nil:
+                        focusedArea = nil
+                    }
+                }
             }
            
             
             if signInView{
                 SignIN(_show: $signInView, place: IdentifiablePlace.init(lat: 50.8, long: 4))
             }
-        }
-        .onAppear{
-            /*
-            Task{
-                if !userdata.currentUser.NAME_USER.isEmpty{
-                    //save userdata
-                    await UserData.save(user:userdata.currentUser){
-                        result in
-                        switch result{
-                        case .success(_):
-                            print("Enregistrement")
-                        
-                        case .failure(_):
-                            print("")
-                        
-                        }
-                    }
-                }
-                
-            }*/
         }
         .onTapGesture {
             withAnimation(.spring()){
@@ -300,17 +327,40 @@ struct FirstScreen: View {
         
         .background{
             let colorWhenPresentationIsOff = connectionPresentation ? 0.4 : 0
-            if !signInView{
-                PlayerView()
-                    .blur(radius: connectionPresentation ? 12.4 : 0, opaque: true)
-                    
-                    .overlay(alignment: .top) {
-                        LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .top, endPoint: .center)
+                VStack{
+                    if !signInView && !connectionPresentation{
+                        PlayerView()
+                            .blur(radius: connectionPresentation ? 12.4 : 0, opaque: true)
+                            .overlay(alignment: .top) {
+                                LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .top, endPoint: .center)
+                                    
+                                    
+                                LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .bottom, endPoint: .center)
+                                    
+                            }
+                            .ignoresSafeArea()
+                    }else{
+                        RoundedRectangle(cornerRadius: 60, style: .continuous)
+                            .stroke(lineWidth: 20)
+                            .ignoresSafeArea(.all)
+                            .background{
+                                Circle().fill(Color("xpress"))
+                                    .frame(width: 100)
+                                    .blur(radius: 5)
+                                    .shadow(color: Color.green, radius: 100)
+                                    .offset(x:-50,y:70)
+                                Circle().fill(Color.green)
+                                    .frame(width: 200)
+                                    .blur(radius: 10)
+                                    .shadow(color: Color.green, radius: 100)
+                                    .offset(x:100,y:300)
+                            }
                             
-                            
-                        LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .bottom, endPoint: .center)
-                            
+                            .foregroundStyle(colorScheme == .dark ? .black : .white)
                     }
+                    
+                }
+                .frame(maxWidth:.infinity, maxHeight:.infinity)
                     .overlay(alignment: .top) {
                         ExpressLogo()
                             .matchedGeometryEffect(id: "logo", in: namespace)
@@ -318,11 +368,34 @@ struct FirstScreen: View {
                     .onTapGesture{
                         connectionPresentation = false
                     }
-            }
-           
-                
         }
         .environmentObject(focusState)
+        .alert("Mot de passe oublié", isPresented: $forgotPassword) {
+            var value:Bool = false
+            if !value{
+                TextField("nom d'utilisateur ou email", text: $utilisateur.this.mail)
+                    .foregroundStyle(.blue)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+            }else{
+                Text("Consultez vos mails pour terminer le processus de réinitialisation")
+            }
+           
+            
+            Button(!value ? "Annuler" : "Terminer") {
+                forgotPassword = false
+            }
+            if !value{
+                Button("Réinitialiser") {
+                    //MARK: Action to réinitialize a password
+                    Task{
+                        value = utilisateur.ResetPassword(utilisateur.this)
+                    }
+                }
+            }
+                } message: {
+                    Text("Veuillez entrer votre adresse mail ou nom d'utilisateur pour réinitialiser votre compte")
+        }
         
     }
     ///This function get adress parts in and return true if adress seems correct
@@ -367,5 +440,6 @@ struct FirstScreen_Previews: PreviewProvider {
             .environmentObject(FetchModels())
             .environmentObject(UserData())
             .environmentObject(Utilisateur())
+            .environmentObject(Alerte())
     }
 }

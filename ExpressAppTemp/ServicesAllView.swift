@@ -10,7 +10,9 @@ import SwiftUI
 struct ServicesAllView: View {
     @EnvironmentObject var userdata:UserData
     @EnvironmentObject var article:Article
+    @EnvironmentObject var appSettings:AppSettings
     @StateObject private var focusState = focusObjects()
+    @FocusState private var focusedTextEditor: Bool
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var alerte:Alerte
@@ -51,139 +53,96 @@ struct ServicesAllView: View {
         }()
     var body: some View {
         NavigationStack {
-            ScrollView {
-                //Search section
-                Section {
-                    //Search bar
-                    TextField("rechercher un service", text: $_search)
-                        .padding()
-                        .frame(alignment: .center)
-                        .multilineTextAlignment(.center)
-                                                
-                        .background(.bar)
-                        .clipShape(Capsule())
-                        .padding()
-                        
-                        .padding([.top, .bottom], 150)
-                    //all services by categories
-                    if !_search.isEmpty{
-                        Section("Resultats") {
-                            ForEach(article.all.sorted(by: {$0.id < $1.id}), id: \.self) { service in
-                                //Set a section with category as title
-                                if (service.categories.contains(_search) || service.name.contains(_search) || service.description.contains(_search)){
-                                    
-                                    NavigationLink {
-                                        ArticleView(service:service)
-                                    } label: {
-                                        HStack{
-                                            Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
-                                                .resizable()
-                                                .frame(width: 70, height:70)
-                                                .scaledToFill()
-                                                .cornerRadius(20)
-                                            VStack(alignment: .leading, spacing: 0) {
-                                                Text(service.name)
-                                                    .fontWeight(.bold)
-                                                Text("#\(service.id)")
-                                                    .foregroundColor(.gray)
-                                            }
-                                        }
-                                        .badge("price")
-                                    }
-                                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                        Button("Supprimer"){
-                                            //delete service code
-                                            let response = Task{
-                                               return await service.Delete()
-                                            }
-                                            print(response)
-                                        }
-                                        .tint(.red)
-                                    }
-                                }
-                            }
-                        }
-                        
-                    }
-                        
-
-                }
-                
-                
-               // Label("Swiper à partir de la gauche pour supprimer un article", systemImage: "info.circle")
-                    //.font(.caption2)
-                    
-                    
+            //all services by categories
+            Divider()
+            //Search section
+            Section {
                 //all services by categories
-                ForEach(article.GetCategories().sorted(by: <), id:\.self) { category in
-                    
-                    Section {
+                if !_search.isEmpty{
+                    Section("Resultats") {
                         ForEach(article.all.sorted(by: {$0.id < $1.id}), id: \.self) { service in
-                            
                             //Set a section with category as title
-                            if (service.categories == category){
-                                NavigationLink(value: service) {
+                            if (service.categories.contains(_search) || service.name.contains(_search) || service.description.contains(_search)){
+                                
+                                NavigationLink {
+                                    ServiceModifierView(service:service)
+                                } label: {
                                     HStack{
-                                             Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
-                                                 .resizable()
-                                                 .frame(width: 70, height:70)
-                                                 .scaledToFill()
-                                                 .cornerRadius(20)
-                                             
-                                                 Text(service.name)
-                                                     .font(.caption)
-                                                     .fontWeight(.bold)
+                                        Image(uiImage: (article.images[service.illustration] ?? UIImage(named: "logo120"))!)
+                                            .resizable()
+                                            .frame(width: 70, height:70)
+                                            .scaledToFill()
+                                            .cornerRadius(20)
+                                        VStack(alignment: .leading, spacing: 0) {
+                                            Text(service.name)
+                                                .fontWeight(.bold)
+                                            Text("#\(service.id)")
+                                                .foregroundColor(.gray)
+                                        }
                                     }
-                                    .padding(.leading, 30)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .badge("price")
                                 }
                                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                    Button("Supprimer",role:.destructive){
+                                    Button("Supprimer"){
                                         //delete service code
                                         let response = Task{
                                            return await service.Delete()
                                         }
                                         print(response)
-                                        //actualise services
-                                        Task{
-                                            await article.fetch()
-                                        }
-                                        
                                     }
                                     .tint(.red)
                                 }
-                                .frame(maxWidth: .infinity)
-                                
                             }
                         }
-                    }header:{
-                        VStack(alignment:.leading){
-                            Text(category)
-                                .padding()
-                                .background(.bar)
-                        }
-                        .frame(maxWidth: .infinity, alignment:.leading)
-                      
-                            
                     }
+                    
                 }
             }
+            List(article.all.sorted(by: {$0.id < $1.id}), id:\.self) { service in
+                NavigationLink(service.name, value: service)
+                
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button("Supprimer",role:.destructive){
+                        //delete service code
+                        appSettings.loading = true
+                        Task{
+                            appSettings.connection_error = !(await service.Delete()) //Delete this service and show error if happen
+                            appSettings.connection_error = !(await article.fetch()) //Actualize services list
+                            appSettings.loading = appSettings.connection_error ? false : true
+                        }
+                        
+                    }
+                    .tint(.red)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .listStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .navigationDestination(for: Service.self) { service in
+                ServiceModifierView(service:service)
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.immediately)
             .toolbar {
+
                 NavigationLink {
                     AddArticleView()
                 } label: {
-                    Label("Ajouter", systemImage: "plus")
+                    Label("Ajouter", systemImage: "plus.circle.fill")
                         .labelStyle(.titleAndIcon)
+                        .background(.gray)
+                        .buttonStyle(.borderedProminent)
                 }
             }
             .listStyle(.plain)
-            .edgesIgnoringSafeArea(.top)
-            .navigationDestination(for: Service.self) { D in
-                ArticleView(service:D)
-            }
+            .edgesIgnoringSafeArea([.top, .bottom])
+            .navigationTitle("Tous les services")
+            
+            .padding(.bottom, 100)
         }
         .navigationViewStyle(.columns)
         .environmentObject(focusState)
+        .searchable(text: $_search)
         //.navigationBarTitleDisplayMode(.)
         .onAppear {
             dicoInfo = fetchModel.GetServiceMessage()
@@ -192,7 +151,7 @@ struct ServicesAllView: View {
                 await UserData.save(user:completion:)
             }*/
             Task{
-                await article.fetch()
+                appSettings.connection_error =  !(await article.fetch())
             }
             
         }
@@ -467,258 +426,58 @@ struct ServicesAllView: View {
     @State var price:String=String()
     @State var description:Bool = false
     @State var newCategory:Bool = false
-    @available(iOS 16.0, *)
-    @ViewBuilder
-    func ArticleView(service:Service = Service()) -> some View{
-        ScrollView{
-                
-            CustomTextField(_text: $article.this.name, _element: "mot de passe",hideMode:false,type:.text, name:"Nom du service")
-                .disabled(!edit_mode)
-                Toggle(isOn: $newCategory) {Text("Nouvelle Categorie")}
-                .disabled(!edit_mode)
-                if newCategory{
-                    
-                    CustomTextField(_text: $article.this.categories, _element: "Catégorie",hideMode:false,type:.text, name:"Nouvelle Catégorie")
-                        .disabled(!edit_mode)
-                }else{
-                    
-                    Section{
-                        
-                    }footer:{
-                        //all existing categories to simplify filling
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(alignment: .center, spacing: 20) {
-                                ForEach(article.GetCategories().sorted(by: <), id:\.self) {category in
-                                    Text(category)
-                                        .padding()
-                                        .background(.ultraThinMaterial)
-                                        .background(article.this.categories == category ? .blue : .blue.opacity(0.0))
-                                        .onTapGesture {
-                                            //assing it
-                                            article.this.categories = category
-                                        }
-                                }
-                            }
-                        }
-                    }
-                }
-               
-                Section {} header: {
-                    Text("Prix de l'article et delai de traitement")
-                }footer:{
-                    HStack(content: {
-                        TextField("Prix en €", text: .init(get: {
-                            price
-                        }, set: { Value in
-                            price = Value.filter({$0.isNumber || $0 == "."})
-                            if !price.isEmpty{
-                                article.this.cost = Decimal(string: price)!
-                            }
-                        }))
-                        //TextField("Prix en €", value: $new_service.cost, format: .currency(code: ""))
-                            .keyboardType(.decimalPad)
-                            .shadow(radius: 1)
-                            .font(.system(size: 20))
-                            .padding()
-                            .background()
-                            .clipShape(Capsule())
-                        Picker("Nombre de jours requis", selection: $article.this.time) {
-                            ForEach(0..<100){day in
-                                Text("\(day)")
-                            }
-                        }
-                        .pickerStyle(.automatic)
-                        .frame(height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/)
-                    })
-                }
-                
-                //message associé
-                
-                Toggle(isOn: $description) {
-                    Text("Description ?")
-                }
-                .onChange(of: description) { V in
-                    if V{
-                        article.this.description = "ras"
-                    }
-                }
-                if description{
-                    Section("Message associé au service"){
-                        TextField("\(article.this.description)", text: .init(get: {
-                            article.this.description
-                        }, set: { v in
-                            if (String(v).allSatisfy({$0.isASCII})){
-                                article.this.description = v
-                            }
-                        }))
-                    }
-                }
-                Section{}
-            header:{
-                Text("Choisir une illustration")
-            }
-            footer:{
-                ScrollView(.horizontal) {
-                    HStack {
-                        ForEach(article.images.keys.sorted(by: <), id: \.self) { name in
-                            Image(uiImage: article.images[name]!)
-                                .resizable()
-                                .frame(width: 100, height:100)
-                                .padding()
-                                .onTapGesture {
-                                    article.this.illustration = name
-                                }
-                                .scaleEffect(article.this.illustration == name ? 1.2: 1)
-                                .shadow(color: Color("xpress"), radius: article.this.illustration == name ? 10: 0)
-                        }
-                    }
-                }
-                .disabled(!edit_mode)
-            }
-            
-                Button("Supprimer l'article"){
-                    Task{
-                        let t = await article.this.Delete()
-                        // if article has been deleted properly
-                    }
-                    
-                
-                    presentationMode.wrappedValue.dismiss()
-                }
-                .padding()
-                .buttonStyle(.bordered)
-                .tint(.red)
-            
-            .listStyle(.plain)
-            
-        }
-        .navigationTitle(service.name)
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar(content: {
-                Button {
-                    if (edit_mode){
-                        Task{
-                            edit_mode = await !article.Put_Service(service: article.this)
-                            await article.fetch()
-                        }
-                        //Show notification
-                        alerte.this.text = "Article mis à jour"
-                        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 2, execute: {
-                            alerte.this.text = String()
-                        })
-                        presentationMode.wrappedValue.dismiss()
-                    }else{
-                        withAnimation(.spring()) {
-                            edit_mode.toggle()
-                        }
-                    }
-                    
-                } label: {
-                    Text(edit_mode == false ? "Modifier" : article.this == service ? "Annuler" : "Enregister")
-                        
-                }
-                .tint(edit_mode ? .green : .blue)
 
-                
-        })
-        .onAppear{
-            //selected_service = service
-            print(service)
-            article.this = service
-        }
-        .onDisappear {
-            article.this = Service()
-        }
-
-        
-    }
     
     @State var showingImagePicker = false
     @State var inputImage:UIImage?
     //@State var price:String=String()
     @ViewBuilder
     func AddArticleView() -> some View{
-        GeometryReader { GeometryProxy in
-            ScrollView{
-                    Section{
-                        TextField("Nom du produit", text:.init(get: {
-                            article.this.name
-                        }, set: { Value in
-                            article.this.name = Value
-                            //Create illustration name
-                            article.this.illustration =
-                            article.this.name.filter({
-                                $0.isLetter && $0.isASCII && !$0.isPunctuation
-                            })
-                        }))
-                        .frame(width: GeometryProxy.size.width)
-                        .font(.custom("Ubuntu", size: 40))
-                        
-                        .bold()
-                        .foregroundStyle(article.is_acceptable(article.this) ? .blue : .red)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.4)
-                    }
-
-                Toggle(isOn: $newCategory) {Text("Nouvelle Categorie")}
-                
-                if newCategory{
-                    TextField("Categorie", text: $article.this.categories)
-                        .contrast(0.1)
-                        .foregroundColor(.gray)
-                }else{
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(alignment: .center, spacing: 20) {
+        NavigationStack {
+            Form{
+                Section(header:Text("Informations sur le service")){
+                    TextField("Nom du produit", text:.init(get: {
+                        article.this.name
+                    }, set: { Value in
+                        article.this.name = Value
+                        //Create illustration name
+                        article.this.illustration =
+                        article.this.name.filter({
+                            $0.isLetter && $0.isASCII && !$0.isPunctuation
+                        })
+                    }))
+                    .foregroundStyle(article.is_acceptable(article.this) ? .blue : .red)
+                    Toggle(isOn: $newCategory) {Text("Créer Nouvelle Categorie")}
+                        .toggleStyle(.button)
+                    //MARK: Picker in existing caterories
+                    if newCategory{
+                        TextField("Categorie", text: $article.this.categories)
+                    }else{
+                        Picker(selection: $article.this.categories, label: Text("Catégorie")) {
                             ForEach(article.GetCategories().sorted(by: <), id:\.self) {category in
-                                Text(category)
-                                    .padding()
-                                    .background(.ultraThinMaterial)
-                                    .onTapGesture {
-                                        //assing it
-                                        article.this.categories = category
-                                    }
+                                Text(category).tag(category)
                             }
                         }
-                        
                     }
+                    
                 }
-                    
-                    Section {
+                //MARK: Section for price and time
+                    Section(header:Text("Prix en € et durée de traitement")){
+                    TextField("Prix en €", text: .init(get: {
+                        price
+                    }, set: { Value in
+                        price = Value.filter({$0.isNumber || $0 == "."})
+                        if !price.isEmpty{
+                            article.this.cost = Decimal(string: price)!
+                        }
+                    }))
+                    .keyboardType(.decimalPad)
+                    TextField("", value: $article.this.time, format: .number, prompt: Text("Durée de traitement"))
                         
-                    } header: {
-                        Text("Prix de l'article et delai de traitement")
-                    }footer:{
-                        HStack(content: {
-                            TextField("Prix en €", text: .init(get: {
-                                price
-                            }, set: { Value in
-                                price = Value.filter({$0.isNumber || $0 == "."})
-                                if !price.isEmpty{
-                                    article.this.cost = Decimal(string: price)!
-                                }
-                                
-                            }))
-                            //TextField("Prix en €", value: $new_service.cost, format: .currency(code: ""))
-                            .keyboardType(.decimalPad)
-                                .shadow(radius: 1)
-                                .font(.system(size: 20))
-                                .padding()
-                                .background()
-                                .clipShape(Capsule())
-                            Picker("Nombre de jours requis", selection: $article.this.time) {
-                                ForEach(0..<100){day in
-                                    Text("\(day)")
-                                }
-                            }
-                            .pickerStyle(.wheel)
-                            .frame(height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/)
-                        })
-                    }
-                    
-                    //Message to user
-                    Section {} footer: {
-                        //message associé
+                }
+                Section(header:Text("Description")){
+                    Toggle("Description ?", isOn: $description)
+                    if description{
                         TextEditor(text: .init(get: {
                             article.this.description
                         }, set: { v in
@@ -727,71 +486,59 @@ struct ServicesAllView: View {
                             }
                         }))
                         .frame(height: 150)
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .focused($focusedTextEditor)
+                        .onReceive(article.this.description.publisher.last()) {
+                                        if ($0 as Character).asciiValue == 10 { // ASCII 10 = newline
+                                            focusedTextEditor = false // unfocus TextEditor to dismiss keyboard
+                                            article.this.description.removeLast() // remove newline at end to prevent retriggering...
+                                        }
+                                    }
+                        .submitLabel(SubmitLabel.done)
+                        .animation(.spring, value: description)
                     }
-                    
-                    //Add illustration
-                    Section {} footer: {
-                        Button(action: {
-                            self.showingImagePicker = true
-                        }, label: {
-                            HStack{
-                                Text("Image")
-                                    .padding()
-                                    .background(Color("xpress"))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                inputImage.map {
-                                    Image(uiImage: $0)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 150, height:150)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                                }
-                            }
-                            .frame(width: .infinity, alignment: .center)
-                        })
-                       
-                    }
+                }
+                Button(action: {
+                    self.showingImagePicker = true
+                }, label: {
+                    Text("Sectionner une image")
+                        .frame(maxWidth: .infinity)
+                })
+                .buttonStyle(.borderedProminent)
+            }
+            .onSubmit {
+                //focusedTextEditor = false // Hide keyboard after pressing Done
             }
         }
-        
-        .navigationTitle(article.this.name)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar(content: {
                 Button {
                     // Save this service
+                    appSettings.loading = true
                     Task{
-                        let response = await article.PushService(inputImage)
-                        if response{
-                            //Show notification
-                            alerte.this.text = "Nouvel Article ajouté"
-                            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 2, execute: {
-                                alerte.this.text = String()
-                            })
+                        if !article.this.withDescription{
+                            article.this.description = "."
                         }
-                         await article.fetch()
+                        appSettings.connection_error = !(await article.PushService(inputImage))
+                        if !appSettings.connection_error{
+                            //Show notification
+                            alerte.NewNotification(.amber, "Nouvel article ajouté", UIImage(systemName: "cart"))
+                            
+                            appSettings.connection_error = !(await article.fetch())
+                            appSettings.loading = false
+                        }
+                         
                     }
                     presentationMode.wrappedValue.dismiss()
                 } label: {
                     Text("Enregister")
                 }
+                .buttonStyle(.borderedProminent)
                 .disabled(!article.is_acceptable(article.this))
         })
+        
         .sheet(isPresented: $showingImagePicker, content: {
             ImagePickerView(selectedImage: $inputImage)
         })
-        .background(LinearGradient(colors: [
-            colorScheme == .dark ? .black : .white,
-            colorScheme == .dark ? .black.opacity(0.6) : .white.opacity(0.6),
-            colorScheme == .dark ? .black.opacity(0.2) : .white.opacity(0.2),
        
-        ], startPoint: .top, endPoint: .bottom))
-        .background{
-            Image(uiImage: (inputImage != nil) ? inputImage! : .init(imageLiteralResourceName: "Shoes4"))
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea(.all)
-        }
     }
     
     //Fonction qui calcule le tarif total
@@ -840,7 +587,7 @@ struct ServicesAllView: View {
                     .offset(y : -minY) // L'image reste figée
             }.frame(height: Proxy.size.height/2)
         }
-        .ignoresSafeArea(.all)
+        .ignoresSafeArea(.container)
         //.edgesIgnoringSafeArea(.horizontal)
         .zIndex(2)
     }
@@ -870,5 +617,6 @@ struct Previews_ServicesAllView_Previews: PreviewProvider {
             .environmentObject(FetchModels())
             .environmentObject(Article())
             .environmentObject(Alerte())
+            .environmentObject(AppSettings())
     }
 }

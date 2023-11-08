@@ -48,9 +48,12 @@ struct User:Codable,Hashable{
         self.surname = "Doe"
         self.mail = "\(name.lowercased())@example.com"
         self.phone = "01234567890"
-        self.adress = "123 Main Street"
+        self.adress = "Rue de ter Plast 45 1020 Bruxelles/Brussel"
         self.password = "password"
-        self.type = "customer"
+        self.type = "user"
+        self.loc_lat = 50.8817
+        self.loc_lon = 4.34475
+        self.province = "Région de Bruxelles-Capitale/Brussels Hoofdstedelijk Gewest"
     }
 
     var isAdmin:Bool{
@@ -63,9 +66,15 @@ struct User:Codable,Hashable{
         return true
     }
     
-    func update()async -> Bool{
+    /// This variable is set to true if the current user is not correct
+    var isEmpty:Bool{
+        return self.name.isEmpty || self.password.isEmpty || self.mail.isEmpty
+    }
+    
+    func update()async -> (Bool,User){
             guard let encoded = try? JSONEncoder().encode(self) else{
-                return false
+                print("Erreur d'encodage")
+                return (false,User())
             }
             let url = URL(string:"http://\(urlServer):\(urlPort)/updateuser")!
             var request = URLRequest(url: url)
@@ -75,13 +84,15 @@ struct User:Codable,Hashable{
                 let (data, _) = try await URLSession.shared.upload(for: request, from: encoded)
                 if let responseString = String(data: data, encoding: .utf8) {
                     print("Reponse de connexion daux données \(responseString)")
-                    return true
+                    let updatedUser = try JSONDecoder().decode(User.self, from: data)
+                    print("utilisateur mis à jour \(updatedUser)")
+                    return (true, updatedUser)
                 } else {
                     print("Impossible de convertir les données de la réponse en texte")
-                    return false
+                    return (false,User())
                 }
             } catch{
-                return false
+                return (false, User())
             }
     }
     
@@ -117,20 +128,6 @@ struct User:Codable,Hashable{
         return ("","","","","")
     }
     
-    //Fonction qui qui prend un User et l'ajoute à la BD
-    func PushUser()->Int{
-        //connectionState.toggle()
-        guard let encoded = try? JSONEncoder().encode(self) else{
-            print("Impossible d'encoder l'utilisateur ")
-            return 0
-        }
-        let url = URL(string: "http://\(urlServer):\(urlPort)/registeruser?name=\(self.name)&surname=\(self.surname)&email=\(self.mail)&address=\(self.adress)&phone=\(self.phone)&password=\(self.password)&type=\(self.type)")!
-        
-        let task2 = URLSession.shared.dataTask(with: url)
-        task2.resume()
-        return 1
-    }
-    
     ///Function which return true if the email is correct
     var isMailIsCorrect : Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
@@ -140,9 +137,24 @@ struct User:Codable,Hashable{
 }
 
 final class Utilisateur:ObservableObject{
-    @Published var this:User = User()
-    @Published var review:User = User()
+    @Published var this:User = User(name:"John")
+    @Published var review:User = User(name:"John")
     @Published var all:Set<User> = []
+    
+    
+    /// Function to reset the password of a given user
+    /// - Parameter user: the user that we want to recover datas
+    /// - Returns: true if recovery process done. False otherwise
+    func ResetPassword(_ user:User)->Bool{
+        guard let encoded = try? JSONEncoder().encode(user) else{
+            return false
+        }
+        print("Reinitialization for mail : \(user.mail)")
+        let url = URL(string: "http://\(urlServer):\(urlPort)/reset?mail=\(user.mail)")!
+        let task2 = URLSession.shared.dataTask(with: url)
+        task2.resume()
+        return true
+    }
     
     func register() async -> Bool{
         guard let encoded = try? JSONEncoder().encode(self.this) else{
@@ -192,12 +204,12 @@ final class Utilisateur:ObservableObject{
         }
     }
     
-    func connect(user:User) async -> Bool{
+    /// Function to identify a user. User is identify with username or email.
+    /// - Parameter user: user to check. username or email and password are required
+    /// - Returns: The first user that matches with the given one. Type User, nil else
+    func connect(user:User) async -> User?{
         guard let encoded = try? JSONEncoder().encode(user) else{
-            DispatchQueue.main.async {
-                //self.notification = "Erreur de connexion!"
-            }
-            return false
+            return nil
         }
         let url = URL(string:"http://\(urlServer):\(urlPort)/connect")!
         var request = URLRequest(url: url)
@@ -207,33 +219,14 @@ final class Utilisateur:ObservableObject{
             let (data, _) = try await URLSession.shared.upload(for: request, from: encoded)
             if let responseString = String(data: data, encoding: .utf8) {
                 print("Reponse de connexion daux données \(responseString)")
+                return try JSONDecoder().decode(User.self, from: data)
             } else {
                 print("Impossible de convertir les données de la réponse en texte")
-            }
-
-            
-            let result = try JSONDecoder().decode([User].self, from: data)
-            if !result.isEmpty{
-                DispatchQueue.global().async {
-                    let r = result.first!
-                    DispatchQueue.main.async {
-                        //self.notification = "Connexion reussie"
-                        self.this = r
-                        //User.connect()
-                    }
-                }
-                return true
-            }else{
-                DispatchQueue.main.async {
-                    //self.notification = "Utilisateur inconnu!"
-                }
-                return false
+                return nil
             }
         } catch{
-            DispatchQueue.main.async {
-                //self.notification = "Erreur!"
-            }
-            return false
+            print("Erreur inconnue")
+            return nil
         }
     }
     

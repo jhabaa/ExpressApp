@@ -10,18 +10,17 @@ import SwiftUI
 struct CommandInDetail: View {
     @EnvironmentObject var article:Article
     @Environment(\.colorScheme) var colorScheme
-    @State var commande:Command
+    @Binding var commande:Command
     @State var client:User
     @State var cart:Set<Achat>=[]
-    @Binding var show:Bool
     var body: some View {
         GeometryReader{
             let size=$0.size
-            VStack{
+            ScrollView{
                 //MARK: Header
                 HStack{
                     //Exit Button
-                    Button(action: {show = false}, label: {
+                    Button(action: {commande = Command()}, label: {
                         Label("Sortir", systemImage: "xmark.circle.fill")
                             .foregroundStyle(colorScheme == .dark ? .white : .black)
                     })
@@ -30,15 +29,15 @@ struct CommandInDetail: View {
                     .tint(Color("fond"))
                     
                     Spacer()
-                    //Delete command
-                    Button(action: {Task{let _ = await commande.delete()}}, label: {
+                    //MARK: When A command is deleted, just close the view after. 
+                    Button(action: {Task{let _ = await commande.delete();commande = Command()}}, label: {
                         Label("Supprimer", systemImage: "trash.circle.fill")
                             .foregroundStyle(colorScheme == .dark ? .white : .black)
                     })
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.capsule)
                     .tint(.red)
-                    .scaleEffect(commande.isEditable ? 1 : 0)
+                    //.scaleEffect(commande!.isEditable ? 1 : 0)
                 }
                 .frame(maxWidth: .infinity, alignment:.leading)
                 //MARK: Inside the card
@@ -49,8 +48,8 @@ struct CommandInDetail: View {
                         Text("#\(commande.id)")
                             .font(.custom("Ubuntu", size: 10))
                             .foregroundStyle(.gray)
-                        Text(commande.date_)
-                            .font(.custom("Ubuntu", size: 10))
+                        //Text(commande!.date_)
+                         //   .font(.custom("Ubuntu", size: 10))
                         Text("Client: \(client.name)")
                             .font(.custom("Ubuntu", size: 10))
                         Text("Client-GSM: \(client.phone)")
@@ -191,11 +190,13 @@ struct CommandInDetail: View {
                 }
             }
             .padding()
+            
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(.ultraThinMaterial)
             
             .clipShape(RoundedRectangle(cornerRadius: 40.0, style: .circular))
             .padding()
+            .padding(.top, 80)
             .task{
                 //MARK: Read datas in the command to open
                 print(commande.services_quantity)
@@ -212,6 +213,6 @@ struct CommandInDetail: View {
 }
 
 #Preview {
-    CommandInDetail(commande: Command(), client: User(name: "John"), cart: Set(arrayLiteral: Achat(Service(), 4)), show: .constant(true))
+    CommandInDetail(commande: .constant(Command()), client: User(name: "John"), cart: Set(arrayLiteral: Achat(Service(), 4)))
         .environmentObject(Article())
 }

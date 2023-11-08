@@ -8,6 +8,10 @@
 import SwiftUI
 import SceneKit
 
+enum notificationStyle{
+    case amber, none
+}
+
 //3D
 struct SceneKitView: UIViewRepresentable {
     let scene: SCNScene
@@ -64,81 +68,96 @@ struct ContentView: View {
     @State var cart:Bool = false
     @State var showMenu:Bool = true
     @State var loading_error:Bool = true
-    @State var connection_error:Bool = true
+    @State var notificationPadding:CGFloat = -250.0
+   //@State var connection_error:Bool = true
     var body: some View {
         GeometryReader { GeometryProxy in
-            //first screen with animate logo in the background
-            //We show FirstScreen connection view if:
-                // -- loggedUser == 0 = user disconnected
-                // -- not images for all services
-                // -- And the most important, the current ID_user == 0 . 0 is reserved here for empty
-            //Background
-            /*
-            if (appSettings.show_logo){
-                SceneKitView(scene: SCNScene(named: "SceneKitScene.scn")!)
-                            .edgesIgnoringSafeArea(.all)
-            }
-            */
-            if appSettings.logged{
-                if utilisateur.this.isAdmin && appSettings.loggedAs == .administrator{
-                    AdminView().transition(.identity)
+            VStack(spacing:1){
+                //MARK: Notification Header
+                HStack(alignment:.center){
+                    Image(uiImage: (alerte.icon ?? UIImage(named: "logo180"))!)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 70)
+                        .tint(.blue)
+                        .background(.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    VStack(alignment:.leading){
+                        Text(alerte.value)
+                            .font(.custom("Ubuntu", size: 20))
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                            .minimumScaleFactor(0.5)
+                    }
+                    Spacer()
                 }
+                .padding()
+                .frame(width: GeometryProxy.size.width, height: 100)
+                .background(.bar)
+                .background{
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(Color("xpress"))
+                        .blur(radius: 50)
+                }
+                .onChange(of: alerte.type) { V in
+                    switch alerte.type {
+                    case .amber:
+                        notificationPadding = 0
+                        Task{
+                            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 5, execute: DispatchWorkItem.init(block: {
+                                //Close notification
+                                alerte.EraseNotification()
+                            }))
+                        }
+                    case .none:
+                        notificationPadding = -250
+                    }
+                }
+                .padding(.top, notificationPadding)
+                .animation(.spring(blendDuration: 2), value: notificationPadding)
+               // .transformEffect(.init(translationX: 0, y: -200))
                 
-                if appSettings.loggedAs == .user{
-                    UserView().transition(.identity)
-                    .overlay(alignment: .bottom) {
-                        TaskView()
+                if appSettings.logged{
+                    if appSettings.loggedAs == .administrator{
+                        AdminView().transition(.identity)
+                            .animation(.spring(blendDuration: 2), value: notificationPadding)
+                    }
+                    
+                    if appSettings.loggedAs == .user{
+                        UserView().transition(.identity)
+                            .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .top)
+                        .overlay(alignment: .bottom) {
+                            TaskView()
+                        }
+                        .animation(.spring(blendDuration: 2), value: notificationPadding)
+                    }
+                }else{
+                    VStack{
+                        FirstScreen(showMenu: $showMenu, showHome: $home)
+                            .zIndex(3)
+                            .animation(.spring(), value: appSettings.logged)
+                            .animation(.spring(blendDuration: 2), value: notificationPadding)
                     }
                 }
             }
-            
-            if (!appSettings.logged){
-                VStack{
-                    FirstScreen(showMenu: $showMenu, showHome: $home)
-                        .zIndex(3)
-                        .animation(.spring(), value: appSettings.logged)
-                }
-            }
-            //loading if images set is not full
-            /*
-            if (!fetchmodel.services_ready){
-                VStack(alignment: .center, spacing: 20) {
-                    Text("Chargement")
-                        .font(.headline)
-                }
-                .frame(maxWidth: .infinity, maxHeight:.infinity)
-                .background()
-                
-            }
-            */
-            //if network issue
+            .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .top)
+            .edgesIgnoringSafeArea(.top)
             
             //server connection overlay
             ZStack{
                 LoadingView()
-                    .scaleEffect(y:loading_error ? 1 : 0, anchor: .leading)
-                    .animation(.easeInOut, value: loading_error)
+                    .opacity(appSettings.loading ? 1 : 0)
+                    .offset(y:appSettings.loading ?  0 : GeometryProxy.size.height)
+                    .animation(.easeInOut, value: appSettings.loading)
                 Text("Connexion aux serveurs...")
                     .offset(y:100)
-                    .scaleEffect(y:loading_error ? 1 : 0, anchor: .leading)
-                    .animation(.spring, value: loading_error)
+                    .scaleEffect(y:appSettings.loading ? 1 : 0, anchor: .leading)
+                    .animation(.spring, value: appSettings.loading)
                 
             }
             .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .center)
-
-            //Notification
-            Notification()
-            
-            //AdressSelectorView(Binding.init(projectedValue: .constant(true)))
         }
         .textInputAutocapitalization(.never)
-        
-        //.ignoresSafeArea(.all)
-        /*
-        .background{
-            LinearGradient(colors: [Color("xpress").opacity(0.7), Color("xpress").opacity(0.0)], startPoint: UnitPoint.bottomTrailing, endPoint: .topLeading)
-                //.ignoresSafeArea()
-        }*/
         //debug
         .onChange(of: appSettings.logged, perform: { newValue in
             print(newValue)
@@ -153,10 +172,9 @@ struct ContentView: View {
                 }
             }
         }message:{
-            Text("Impossible de se connecter au serveur. Veuillez vérifier votre connection internet")
+            Text("Impossible de se connecter au serveur. Veuillez vérifier votre connection internet et vous assurer que vos identifiants sont corrects. Cliquez sur Annuler pour entrer de nouveaux identifiants.")
         }
         
-        //.alert("", isPresented: $connection_error, actions: {})
         .task{
             let handle = Task{
                 return await article.fetch()
@@ -167,8 +185,6 @@ struct ContentView: View {
                 loading_error = appSettings.connection_error
             }
         }
-        
-        //Notification
         //loading
         .overlay {
             if userdata.loading {

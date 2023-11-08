@@ -9,7 +9,7 @@ import Foundation
 import MapKit
 
 struct Command:Hashable,Codable{
-    var id:Int = Int.init()
+    var id:Int = 0
     var infos:String
     var cost:Decimal
     var enter_date:String
@@ -35,12 +35,13 @@ struct Command:Hashable,Codable{
         self.agent = 0
         self.user = user
     }
+    
     init() {
         self.infos = String()
         self.cost = Decimal()
-        self.enter_date = ""
-        self.return_date = ""
-        self.date_ = ""
+        self.enter_date = "2000/01/01"
+        self.return_date = "2000/01/01"
+        self.date_ = Date().mySQLFormat()
         self.services_quantity = String()
         self.agent = 1
         self.user = Int32()
@@ -54,6 +55,10 @@ struct Command:Hashable,Codable{
         self.services_quantity = "8:4,6:1"
         self.agent = 1
         self.user = Int32()
+    }
+    
+    var isNil:Bool{
+        return self.id==0
     }
     
     var isValid:Bool{

@@ -24,16 +24,22 @@ struct Alert:Hashable{
 }
 
 final class Alerte:ObservableObject{
-    @Published var this:Alert = Alert(color: Color("xpress"), text: String())
-    var null:Alert = Alert(color: Color("xpress"), text: String())
+    @Published var type:notificationStyle = .none
+    @Published var value:String = String()
+    @Published var icon:UIImage?
     
-    func setAlert(_ text:String){
-        
-        self.this.color = text.contains("impossible") ? Color.red : Color("xpress")
-        self.this.text = text
+    func NewNotification(_ type:notificationStyle, _ value:String, _ icon:UIImage?){
+        self.type = type
+        self.value = value
+        self.icon = icon
+    }
+    func EraseNotification(){
+        self.type = .none
+        self.value = ""
+        self.icon = nil
     }
 }
-
+/*
 struct Notification: View {
     //@State var _notificationText:String
     @EnvironmentObject var alerte:Alerte
@@ -44,23 +50,26 @@ struct Notification: View {
                 VStack{
                     Text(alerte.this.text).bold().padding()
                         .font(.custom("Outfit", size: 20))
+                        .frame(maxWidth: .infinity)
                         .background{
-                            RoundedRectangle(cornerRadius: 20).fill(alerte.this.color)
-                                .opacity(0.7)
+                            RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial)
                                 .shadow(radius: 3)
                         }
                 }
+                
                 //.scaleEffect(alerte.this.text.isEmpty ? 0 : 1)
                 //.animation(.loading(), value: alerte.this.text)
-                .scaleEffect(alerte.this.isEmpty ? 0 : 1, anchor:.top)
+                //.offset(y:alerte.this.isEmpty ? -200 : 0)
+                //.scaleEffect(alerte.this.isEmpty ? 0 : 1, anchor:.top)
                 .transition(.scale)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .animation(.spring(), value: alerte.this.isEmpty)
+                .frame(height: 200)
+                .background(.red)
                 
+                .animation(.spring(), value: alerte.this.isEmpty)
                 .onAppear(perform: {
                     //alerte.this.text = "test"
                     DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(3)){
-                        alerte.this.text = String()
+                        alerte.this.text = ""
                     }
                 })
         }.frame(alignment: .top)
@@ -69,7 +78,15 @@ struct Notification: View {
 
 struct Previews_Notification_Previews: PreviewProvider {
     static var previews: some View {
-        Notification()
-            .environmentObject(Alerte())
+        ContentView()
+            .environmentObject(UserData())
+                .environmentObject(FetchModels())
+                .environmentObject(AppSettings())
+                .environmentObject(Panier())
+                .environmentObject(Article())
+                .environmentObject(Utilisateur())
+                .environmentObject(Alerte())
+                .environmentObject(Days())
     }
 }
+*/

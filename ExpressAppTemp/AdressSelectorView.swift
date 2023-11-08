@@ -9,14 +9,16 @@ import SwiftUI
 import MapKit
 
 struct AdressSelectorView: View {
+    //@EnvironmentObject var utilisateur:Utilisateur
+    @State var user:User
     @EnvironmentObject var utilisateur:Utilisateur
     @StateObject var locationManager:LocationManager =  LocationManager()
+    @EnvironmentObject var alerte:Alerte
     @Environment(\.colorScheme) var colorScheme
     @Binding var show:Bool
     var body: some View {
         GeometryReader {
             let size:CGSize = $0.size
-            #warning("To Do")
             //MARK: Map as background
             MapviewSelection()
                 .ignoresSafeArea()
@@ -29,27 +31,23 @@ struct AdressSelectorView: View {
                         .frame(maxWidth: .infinity,maxHeight: .infinity)
                         .background(LinearGradient(colors: [
                             color.opacity(1),
-                            color.opacity(utilisateur.this.adress.isEmpty ? 0.8 : 0),
+                            color.opacity(0.8),
                             color.opacity(0)
                         ], startPoint: .bottom, endPoint: .center))
+                }
+                .task{
+                    //MARK: Set Map region
+                    locationManager.mapView.region = .init(center: CLLocationCoordinate2D(latitude: CLLocationDegrees(user.loc_lat), longitude: CLLocationDegrees(user.loc_lon)), latitudinalMeters: 300, longitudinalMeters: 300)
+                    locationManager.setPin(CLLocationCoordinate2D(latitude: CLLocationDegrees(user.loc_lat), longitude: CLLocationDegrees(user.loc_lon)))
                 }
             
             
             VStack{
                 //MARK: Text to specify that what we need address for
                 ZStack{
-                    VStack{
-                        Image(systemName: "location")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 60)
-                            .foregroundStyle(.gray)
-                        Text("Nous avons besoin de votre adresse pour la récupération et la livraison du linge")
-                            .multilineTextAlignment(.center)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.3)
-                            .font(.custom("ubuntu", size: 15))
-                    }
+                    Label(user.adress.isEmpty ? "Nous avons besoin de votre adresse pour la récupération et la livraison du linge" : user.adress, systemImage: "mappin.and.ellipse.circle.fill")
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(2)
                     .frame(maxWidth: .infinity)
                     .offset(x:locationManager.fetchedPlaces == nil ? 0 : 500)
                     
@@ -64,10 +62,10 @@ struct AdressSelectorView: View {
                                         locationManager.mapView.region = .init(center: CLLocationCoordinate2D(latitude: place.location?.coordinate.latitude ?? 0.0, longitude: place.location?.coordinate.longitude ?? 0.0), latitudinalMeters: 300, longitudinalMeters: 300)
                                         locationManager.setPin(CLLocationCoordinate2D(latitude: place.location?.coordinate.latitude ?? 0.0, longitude: place.location!.coordinate.longitude ))
                                         //MARK: Set datas to current user
-                                        utilisateur.this.adress = "\(place.name!) \(place.postalCode!) \(place.locality!)"
-                                        utilisateur.this.province = place.administrativeArea!
-                                        utilisateur.this.loc_lat = Float((place.location?.coordinate.latitude)!)
-                                        utilisateur.this.loc_lon = Float((place.location?.coordinate.longitude)!)
+                                        user.adress = "\(place.name!) \(place.postalCode!) \(place.locality!)"
+                                        user.province = place.administrativeArea!
+                                        user.loc_lat = Float((place.location?.coordinate.latitude)!)
+                                        user.loc_lon = Float((place.location?.coordinate.longitude)!)
                                     }, label: {
                                         VStack{
                                             Text(place.name ?? "")
@@ -81,16 +79,17 @@ struct AdressSelectorView: View {
                                 }
                             }
                             .frame(height: 200,alignment: .bottom)
-                            
                         })
                         .frame(height:200,alignment: .bottom)
                     }
                 }
                 
-                if utilisateur.this.adress.isEmpty{
+                if user.adress.isEmpty{
                     TextField("Entrez votre adresse", text: $locationManager.searchText)
                         .padding()
                         .background(.bar)
+                        .padding(.bottom,50)
+                        .submitLabel(.done)
                 }
                 else{
                     //MARK: Address is correct for the user or not.
@@ -98,10 +97,26 @@ struct AdressSelectorView: View {
                         Text("Cette adresse est-elle correcte ?")
                         Button(action: {
                             //If this user, we can update this
-                            Task{
-                               show = await !utilisateur.this.update()
-                            
+                            print("Utilisateur.This looks like \(utilisateur.this.isUser)")
+                            print("User looks like : \(user)")
+                            if utilisateur.this.isUser{
+                                var response = false
+                                Task{
+                                    (response,utilisateur.this) = await user.update()
+                                    print("\(response) \(utilisateur.this)")
+                                    user = utilisateur.this
+                                    show = !response
+                                }
+                                //Show notification
+                                #warning("Look here")
+                                alerte.NewNotification(.amber, "Nouvelle adresse validée. Votre profil sera mis à jour à votre prochaine connexion", UIImage(systemName: "location"))
+                                /*
+                                alerte.this.text = "Adresse modifiée"
+                                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 2, execute: {
+                                    alerte.this.text = String()
+                                })*/
                             }
+                            
                         }, label: {
                             Text("Oui, c'est correct")
                                 .padding()
@@ -113,7 +128,7 @@ struct AdressSelectorView: View {
                         // If not, restart the process
                         Button {
                             withAnimation {
-                                utilisateur.this.adress = ""
+                                user.adress = ""
                                 locationManager.searchText = ""
                                 locationManager.fetchedPlaces = nil
                             }
@@ -137,15 +152,19 @@ struct AdressSelectorView: View {
             }
             .padding()
             .frame(maxHeight: .infinity,alignment: .bottom)
-            
+            .ignoresSafeArea(.container)
         }
         .frame(alignment: .bottom)
+        .onAppear {
+            print("Change for user : \(user)")
+        }
     }
 }
 
 #Preview {
-    AdressSelectorView(show: .constant(true))
+    AdressSelectorView(user: User(name: "John"), show: .constant(true))
         .environmentObject(Utilisateur())
+        .environmentObject(Alerte())
 }
 
 //MARK: Mapview Live selection
@@ -169,3 +188,4 @@ struct MapviewHelper:UIViewRepresentable{
         
     }
 }
+

@@ -32,18 +32,18 @@ struct TaskView: View {
                         Image(systemName: !value ? key.PageIcon : "\(key.PageIcon).fill")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 30)
+                            .frame(width: value ? 40 : 30)
                             .offset(y:value ? 0 : 10)
                             .minimumScaleFactor(0.3)
-                            .overlay(alignment: .top, content: {
+                            .overlay(alignment: .center, content: {
                                 //If cart is not empty
                                 if (!commande.isEmpty && key.PageName=="panier"){
                                     ZStack{
-                                        Circle().fill(Color("xpress"))
+                                        Capsule().fill(Color("xpress"))
                                             .shadow(color: Color("xpress"), radius: 5)
                                         Text("\(commande.getNumberOfArticles)")
                                     }
-                                        .offset(y:-30)
+                                        .offset(y:-10)
                                         .font(.caption)
                                         .scaleEffect(x: !value ? 1 : 0, y: !value ? 1 : 0, anchor:.center)
                                        
@@ -55,39 +55,29 @@ struct TaskView: View {
                             .minimumScaleFactor(0.3)
                             .offset(y:value ? 0 : 20)
                             .scaleEffect(y:value ? 1 : 0 , anchor:.bottom)
-                            //.coordinateSpace(name: "imageCart")
                     }
-                    .scaleEffect(value ? 1.3 : 1)
-                    
+                    .padding(5)
+                    .background{
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .fill(.blue.gradient)
+                            .opacity(value ? 0.5 : 0)
+                            .blur(radius: 20)
+                            .frame(width: 100)
+                    }
                 }
-                .tint(userdata.activePage.id == key.id ? .blue : .primary)
+                .tint(.primary)
+
             }
         }
         .frame(height: 80)
-        //.background(colorscheme == .dark ? Color.black.opacity(0.9).shadow(color: .white, radius: 10) : Color.white.opacity(0.9).shadow(color: .black, radius: 10))
+
         .background(.bar.shadow(.drop(radius: 5)))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 20,style:.continuous))
         .padding(.horizontal)
         .scaleEffect(userdata.taskbar ? 1 : 0)
         .animation(.spring, value: userdata.pages)
         .offset(y: userdata.taskbar ? 0 : 100)
-        /*
-        HStack{
-                
-            }
-            .frame(height: 70, alignment: Alignment.center)
-            .background(.ultraThinMaterial)
-            //.background(.thinMaterial)
-            .overlay(alignment: userdata.activePage.id == 1 ? Alignment.bottomLeading : userdata.activePage.id == 2 ? .bottom : .bottomTrailing) {
-                Rectangle().fill(RadialGradient(colors: [Color("xpress").opacity(1), Color("xpress").opacity(0)], center: .center, startRadius: 0.0, endRadius: 50.0))
-                    .shadow(color: Color("xpress"), radius: 10)
-                    .frame(width: 120, height: 5,alignment:.center)
-                    //.offset(y: value ? 15 : -20)
-                    //.scaleEffect(y:value ? 1 : 0, anchor:.top)
-            }
-            .clipShape(Capsule())
-            .coordinateSpace(name: "taskbar")
-         */
+        
         }
 }
 

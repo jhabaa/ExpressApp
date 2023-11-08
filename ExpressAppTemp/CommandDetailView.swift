@@ -90,11 +90,6 @@ struct CommandDetailView: View {
                             .minimumScaleFactor(0.4)
                             .lineLimit(1)
                         }
-                       
-                        
-                        
-                        
-                        
                     }
                     .padding()
                 }
@@ -272,100 +267,7 @@ struct CommandDetailView: View {
                 VStack{
                     // Shipping and recover dates
                     #warning("A rectifier pour couvrir les bonnes périodes")
-                    /*
-                    Group {
-                        //Recuperation
-                        VStack{
-                            Label("Récupération", systemImage: "shippingbox.fill")
-                            if modif_condition{
-                                HStack{
-                                    DatePicker(
-                                        "Start Date",
-                                        selection: $date_in,
-                                        in:userdata.dateTime ... Date.distantFuture,
-                                        displayedComponents: [.date]
-                                    )
-                                    .datePickerStyle(.compact)
-                                    .labelsHidden()
-                                    .tint(Color("xpress"))
-                                    .cornerRadius(20)
-                                    
-                                    Picker(selection: $commande.this.enter_time) {
-                                        ForEach(fetchModel.TIMES_IN_AVAILABLES, id: \.self) { value in
-                                            Text("\(value)h à \(value + 1)h").tag("\(value)")
-                                            
-                                        }
-                                    } label: {
-                                        Text("Horaire")
-                                    }
-                                    .pickerStyle(.menu)
-                                    .background(.ultraThinMaterial)
-                                    .background(Color("xpress").opacity(0.3))
-                                    .shadow(radius: 1)
-                                    .cornerRadius(20)
-                                }
-                                .onChange(of: date_in) { _ in
-                                    Task{
-                                        await fetchModel.FetchTimes(day:date_in.mySQLFormat(), type:"in")
-                                        commande.setDateIn(date_in)
-                                        commande.setDateOut(fetchModel.AddDaysToDate(date: date_in, daysToAdd: panier.daysNeeded()))
-                                       
-                                        //userdata.currentCommand.return_date = fetchmodel.AddDaysToDate(date: date, daysToAdd: userdata.MaxDaysForCard()).mySQLFormat()
-                                        //userdata.currentCommand.return_date = return_date.mySQLFormat()
-                                    }
-                                    
-                                }
-                            }
-                            
-                            
-                            Label("\(commande.this.enter_date.toDate()) entre \(commande.this.enter_time)H et \(Int(commande.this.enter_time)! + 1)H", systemImage: "info")
-                                .font(.caption2)
-                                .foregroundColor(Color.secondary)
-                        }
-                        .padding()
-                        
-                        //Delivery
-                        VStack{
-                            Label("Livraison", systemImage: "shippingbox.and.arrow.backward.fill")
-                            if modif_condition{
-                                HStack{
-                                    DatePicker(
-                                        "Start Date",
-                                        selection: $date_out,
-                                        //in:fetchModel.AddDaysToDate(date: date_in, daysToAdd:userdata.MaxDaysForCard()) ... Date.distantFuture,
-                                        displayedComponents: [.date]
-                                    )
-                                    .datePickerStyle(.compact)
-                                    .labelsHidden()
-                                    .tint(Color("xpress"))
-                                    .cornerRadius(20)
-                                    
-                                    Picker(selection: $commande.this.return_time) {
-                                        ForEach(fetchModel.TIMES_OUT_AVAILABLES, id: \.self) { value in
-                                            Text("\(value)h à \(value + 1)h").tag("\(value)")
-                                            
-                                        }
-                                    } label: {
-                                        Text("Horaire")
-                                    }
-                                    .pickerStyle(.menu)
-                                    .background(.ultraThinMaterial)
-                                    .background(Color("xpress").opacity(0.3))
-                                    .shadow(radius: 1)
-                                    .cornerRadius(20)
-                                }
-                            }
-                            
-                        }
-                        .onChange(of: date_out) { _ in
-                            Task{
-                                await fetchModel.FetchTimes(day:date_out.mySQLFormat(), type:"out")
-                                commande.setDateOut(date_out)
-                                //userdata.currentCommand.return_date = fetchmodel.AddDaysToDate(date: date, daysToAdd: userdata.MaxDaysForCard()).mySQLFormat()
-                                //userdata.currentCommand.return_date = return_date.mySQLFormat()
-                            }
-                        }
-                    }*/
+             
                     ZStack (alignment:.top){
                         Image("na_january_20")
                             .resizable()
@@ -430,10 +332,10 @@ struct CommandDetailView: View {
                         
                         // Alert
                         //Show notification
-                        alerte.this.text = "Adresse copiée"
+                        /*alerte.this.text = "Adresse copiée"
                         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 2, execute: {
                             alerte.this.text = String()
-                        })
+                        })*/
                         
                     }
                     Text("tapez pour copier l'adresse")

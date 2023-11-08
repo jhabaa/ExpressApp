@@ -34,10 +34,6 @@ struct _SettingsView: View {
             ScrollView{
                 LazyVGrid(columns: columns) {
                     Group{
-                        VStack{
-                            
-                            Label("Annonce Publique", systemImage: "square.and.arrow.up.circle")
-                        }
                         
                         VStack{
                             Label("Tarif Bruxelles", systemImage: "car.rear.road.lane")
@@ -64,9 +60,10 @@ struct _SettingsView: View {
                         
                     }
                     .padding(.vertical, 20)
-                    .frame(maxWidth:.infinity)
-                    .background(Color("xpress").opacity(0.3).gradient)
+                    .frame(height: 100)
+                    .frame(maxWidth:.infinity, maxHeight:100)
                     .background(.bar)
+                    
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     
                 }
@@ -74,23 +71,22 @@ struct _SettingsView: View {
                     Section {
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
-                                appSettings.to_admin()
+                                appSettings.to_user()
                             }
                             //User.disconnect()
                             //userdata.currentUser.LOGGED_USER = 0
                         } label: {
-                            VStack(alignment:.center){
+                            
                                 Text("Se connecter en tant qu'utilisateur")
                                     .multilineTextAlignment(.center)
-                                    //.foregroundColor(.blue)
-                            }
-                            .frame(maxWidth: .infinity)
-                            
+                                    .padding()
                         }
+                        
                         .buttonStyle(.borderedProminent)
                     } footer: {
                         Text("Quitter ce mode et se connecter en tant qu'utilisateur pour pouvoir passer des commandes ou vérifier l'état des services")
                             .font(.caption2)
+                            .padding(.horizontal)
                     }
                     Section {
                         Button {
@@ -100,19 +96,18 @@ struct _SettingsView: View {
                             //User.disconnect()
                             //userdata.currentUser.LOGGED_USER = 0
                         } label: {
-                            VStack(alignment:.center){
                                 Text("Deconnexion")
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.red)
-                            }
-                            .frame(maxWidth: .infinity)
+                            
+                           
                             
                         }
                         .padding()
                         .background(.bar)
                         .padding(.top,100)
                     } footer: {
-                        Text("Fermer votre session")
+                        Text("Fermez votre session")
                             .font(.caption2)
                     }
                     
@@ -122,55 +117,35 @@ struct _SettingsView: View {
                     //fetchModels.fetchSettings()
                 }
             }
-            
-            VStack{
-                VStack{
-                    Text("Entrez le nouveau prix \(selectedParam.nameOf())")
-                        .frame(maxWidth: .infinity)
-                    TextField("", value:
-                                selectedParam == .bruxelles ?
-                              $parameters.tarif_bruxelles : selectedParam == .brabant ? $parameters.tarif_brabant : $parameters.tarif_km, format: .currency(code: "EUR"))
-                        .padding()
-                        .background(.bar)
-                        .multilineTextAlignment(.center)
-                    
-                    Button("Valider"){
-                        // send update
-                        Task{
-                            await UpdateParameters(parameters)
-                            showParams = false
-                            parameters = try await RetrieveParameters()!
-                        }
-                        
-                    }
-                    .padding()
-                    .buttonBorderShape(.roundedRectangle)
-                    .buttonStyle(.borderedProminent)
-                    
-                }
-                .padding()
-                .clipShape(RoundedRectangle(cornerSize: CGSize(width: 20, height: 20)))
-                .background()
-                .padding()
+            .alert("Entrez le nouveau prix", isPresented: $showParams) {
+                TextField("", value:
+                            selectedParam == .bruxelles ?
+                          $parameters.tarif_bruxelles : selectedParam == .brabant ? $parameters.tarif_brabant : $parameters.tarif_km, format: .currency(code: "EUR"))
+                .foregroundStyle(.black)
+                .multilineTextAlignment(.center)
                 
-                // Close Btn
                 Button {
-                    //Close action
+                    //
                     showParams = false
                 } label: {
-                    Image(systemName: "xmark.circle")
-                        .resizable()
-                        .tint(.red)
-                        .padding()
-                        .scaledToFit()
-                        .frame(width: 80)
-                        
+                    Text("Annuler")
                 }
 
+                Button {
+                    // send update
+                    Task{
+                        let _ = await UpdateParameters(parameters)
+                        showParams = false
+                        parameters = await RetrieveParameters()!
+                    }
+                } label: {
+                    Text("Valider")
+                }
+
+            } message: {
+                Text("Merci d'introduire le nouveau prix. Ce prix restera fixe jusqu'au prochain changement")
             }
-            .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .center)
-            .background(.bar)
-            .scaleEffect(showParams ? 1 : 0)
+
         }
         .frame(alignment: .center)
         .onAppear(perform: {

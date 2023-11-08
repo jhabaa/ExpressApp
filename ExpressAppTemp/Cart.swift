@@ -151,7 +151,7 @@ struct Cart: View {
                         }
                         .frame(maxWidth: 200)
                         .padding(.horizontal,30)
-                        .shadow(radius: 1)
+                        .padding(.bottom, 300)
                     }
                     .scaleEffect(commande.isEmpty ? 0 : 1)
                 }
@@ -250,7 +250,7 @@ struct Cart: View {
                     .padding(.bottom, 30)
                     .frame(height:commande.subTotal >= 30.0 ? 40 : 0)
                     .offset(y: commande.subTotal >= 30.0 ? 0 : 100)
-                    .animation(.pulse(), value: commande.subTotal)
+                    .animation(.spring, value: commande.subTotal)
             }
             .padding()
             .background{
@@ -268,8 +268,6 @@ struct Cart: View {
                     commande.this.delivery =
                     await commande.getDeliveryCost(utilisateur.this)
                 }
-                
-                
             }
             //.blur(radius: userdata.cart.isEmpty ? 20 : 0)
             
@@ -277,7 +275,7 @@ struct Cart: View {
                 Date_selector_View(show: $userdata.show_date_selector_view)
             }
             
-            //if cart is empty, print it
+            //if cart is empty, don't print it
             if commande.isEmpty{
                 VStack(alignment: .center, spacing: 20) {
                     Image("empty")

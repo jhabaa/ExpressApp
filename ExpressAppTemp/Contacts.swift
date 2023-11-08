@@ -16,12 +16,9 @@ struct Contacts: View {
                 VStack(alignment:.leading){
                     Text("Leuvensesteenweg 526 1930 Zaventem")
                         .foregroundColor(.gray)
-                    Text("+32 02 420 41 30")
+                    Link("+32024204130", destination: URL(string: "tel:+32024204130")!)
                         .padding(.bottom,10)
-                        .onTapGesture {
-                            UIPasteboard.general.string = "+32024204130"
-                        }
-                    Text("info@expressdryclean.be")
+                    Link("info@expressdryclean.be", destination: URL(string: "mailto:info@expressdryclean.be")!)
                         .textSelection(EnabledTextSelectability.enabled)
                     Label("BE0460.715.554", systemImage: "newspaper.fill")
                 }

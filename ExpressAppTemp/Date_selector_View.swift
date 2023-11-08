@@ -104,6 +104,8 @@ struct Date_selector_View: View {
     @Environment(\.colorScheme) var colorscheme
     @EnvironmentObject var utilisateur:Utilisateur
     @EnvironmentObject var daysOff : Days
+    @EnvironmentObject var appSettings : AppSettings
+    @FocusState private var focusedTextEditor: Bool
     @State var dateIn:Date = Date()
     @State var dateOut:Date = Date()
     @Binding var show:Bool
@@ -178,6 +180,14 @@ struct Date_selector_View: View {
                                     .background(.bar)
                                     .foregroundStyle(.gray)
                                     .frame(height:100)
+                                    .focused($focusedTextEditor)
+                                    .onReceive(commande.this.infos.publisher.last()) {
+                                                    if ($0 as Character).asciiValue == 10 { // ASCII 10 = newline
+                                                        focusedTextEditor = false // unfocus TextEditor to dismiss keyboard
+                                                        commande.this.infos.removeLast() // remove newline at end to prevent retriggering...
+                                                    }
+                                                }
+                                    .submitLabel(.done)
                             }
                             .overlay(alignment:.bottomLeading) {
                                 Text("Caractères restants : \(150 - commande.this.infos.count)")
@@ -188,7 +198,15 @@ struct Date_selector_View: View {
                         
                     }
             }
-            
+                .onSubmit({
+                    //drop down keyboard
+                    switch focusedTextEditor {
+                    case true:
+                        focusedTextEditor.toggle()
+                    default:
+                        focusedTextEditor.toggle()
+                    }
+                })
             //on appear, get the max treatment time
             .onAppear{
                 time_to_wait = commande.daysNeeded()
@@ -249,19 +267,29 @@ struct Date_selector_View: View {
                             possibleTimesIn = await fetchmodel.FetchTimes(day:dateIn.mySQLFormat())
                             possibleTimesOut = await fetchmodel.FetchTimes(day:dateOut.mySQLFormat())
                             //Assign firsts values of arrays ad default values
-                            commande.this.enter_time = String(possibleTimesIn.first ?? 0)
-                            commande.this.return_time = String(possibleTimesOut.first ?? 0)
+                            
                         }
                         stage = .step4
                         
                     case .step4:
+                        //MARK: Validate Times
+                        commande.this.enter_time = String(possibleTimesIn[indexIn])
+                        commande.this.return_time = String(possibleTimesOut[indexOut])
                         //MARK: All is ok. Print the recap
                         stage = .step5
                     case .step5:
                         //Validate the command
+                        appSettings.loading = true
                         Task{
                             await commande.validate(utilisateur)
-                            let _ = await commande.PushCommand()
+                            show = await commande.PushCommand() > 0 ? false : true
+                            
+                            if !show {
+                                //Then show taskview
+                                userdata.taskbar = true
+                                appSettings.loading = false
+                                show = !commande.erase() // Close the cart window after erasing the cart
+                            }
                         }
                     }
                 }, label: {
@@ -463,7 +491,11 @@ struct Date_selector_View: View {
                     //MARK: Here we set days with open circle down
                     ForEach(extractDates(currentMonth: currentMonth)){value in
                         //CadView(value: value)
-                        if !(value.day == -1){
+                        
+                        switch value.day{
+                        case -1:
+                            Text("")
+                        default:
                             Button {
                                 //MARK: Logic -> Id dateIn si default, I set the value to the dateIn variable. Else to the dateOut
                                 switch stage {
@@ -512,7 +544,9 @@ struct Date_selector_View: View {
                             .disabled(daysOff.isNoWorkDay(value.date))
                             .disabled(value.date < date_limit)
                             .disabled(stage == .step3)
+                            
                         }
+                        
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -635,5 +669,6 @@ struct Date_selector_View_Previews: PreviewProvider {
             .environmentObject(Utilisateur())
             .environmentObject(Coupons())
             .environmentObject(Days())
+            .environmentObject(AppSettings())
     }
 }
