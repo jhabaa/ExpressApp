@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleGetInfoString</key>
 	<string></string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -15,17 +17,13 @@
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
-			<key>http://express.heanlab.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
 		</dict>
 	</dict>
 	<key>UIAppFonts</key>
 	<array>
+		<string>SadMachine.ttf</string>
+		<string>BebasNeue-Regular.ttf</string>
+		<string>Calcula.ttf</string>
 		<string>ModernAntiqua-Bold.ttf</string>
 		<string>Coffee and Crafts.ttf</string>
 		<string>Gotham-Bold</string>
@@ -37,7 +35,12 @@
 		<string>Ubuntu-Light.ttf</string>
 	</array>
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>expressColor</string>
+		<key>UIImageName</key>
+		<string>logo</string>
+	</dict>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>
