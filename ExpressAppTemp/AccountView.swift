@@ -76,107 +76,12 @@ struct AccountView: View{
             let s = GeometryProxy.size
             let frameY = GeometryProxy.frame(in: .named("scroll")).minY
             let minY = GeometryProxy.frame(in: .named("scroll")).minY + GeometryProxy.safeAreaInsets.top
-           
+            
             UserDetailView(user: utilisateur.this)
 
-            if show_options == .options{
-                VStack(spacing:100){
-                    VStack(spacing:60){
-                        Button {
-                            //deconnect user
-                            appSetting.to_admin()
-                        } label: {
-                            Image(systemName: "person.badge.shield.checkmark.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 50)
-                                .tint(.white)
-                                .padding()
-                                .background(.green.gradient)
-                                .shadow(radius: 10)
-                                .clipShape(RoundedRectangle(cornerRadius: 20), style: .init())
-                                .overlay(alignment: .bottom) {
-                                    Text("Mode Admin")
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.2)
-                                        .foregroundStyle(.gray)
-                                        .offset(y:20)
-                                }
-                        }
-                        .scaleEffect(utilisateur.this.isAdmin ? 1 : 0)
-                        //Deconnexion Square Button
-                        
-                        Button {
-                            //deconnect user
-                            appSetting.disconnect()
-                        } label: {
-                            Image(systemName: "power")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 50)
-                                .tint(.white)
-                                .padding()
-                                .background(.red.gradient)
-                                .shadow(radius: 10)
-                                .clipShape(RoundedRectangle(cornerRadius: 20), style: .init())
-                                .overlay(alignment: .bottom) {
-                                    Text("Déconnexion")
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.2)
-                                        .foregroundStyle(.gray)
-                                        .offset(y:20)
-                                }
-                        }
-                    }
-                    Text("Je veux supprimer mon compte")
-                        .font(.caption)
-                        .underline(pattern: Text.LineStyle.Pattern.solid)
-                        .foregroundStyle(.gray)
-                        .onTapGesture {
-                            show_delete_account = true
-                        }
-                        .confirmationDialog(Text("Confirmation"), isPresented: $show_delete_account) {
-                            Button("Oui, Je me désinscris"){
-                                //
-                                    Task{
-                                        let r = await utilisateur.delete(utilisateur.this)
-                                        if r{
-                                            show_delete_account = false
-                                            appSetting.disconnect()
-                                        }
-                                    }
-                            }
-                            
-                        } message: {
-                            Text("Votre compte sera définitivement supprimé de nos serveurs. Voulez vous continuer ?")
-                        }
-                }
-                .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: Alignment.center)
-                .background(.ultraThinMaterial)
-            }
-            //LogOut & deletion button
-            HStack(alignment:.center){
-                Image(systemName: (show_options == .options) ? "xmark": "rectangle.portrait.and.arrow.forward")
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .opacity(show_options == .hidden ? 0 : 1)
-                    .onTapGesture {
-                        withAnimation(.spring) {
-                            switch show_options {
-                            case .hidden:
-                                break
-                            case .options:
-                                show_options = .home
-                            case .home:
-                                show_options = .options
-                            }
-                        }
-                    }
-            }
-            .padding(.horizontal, 20)
-            .frame(width: GeometryProxy.size.width, height: 50, alignment: .trailing)
-            //.padding(.top, 70)
+           
+            
+            
            
             if !commandToView.isNil{
                 CommandInDetail(commande: $commandToView, client: utilisateur.this)

@@ -160,7 +160,7 @@ struct ArticleView: View {
                         .frame(maxWidth: .infinity)
                         .background(Color("xpress"))
                         .cornerRadius(10)
-                        .foregroundColor(Color.primary)
+                        .foregroundColor(.white)
                         .padding()
                     }
                     .minimumScaleFactor(0.4)

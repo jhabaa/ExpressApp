@@ -192,11 +192,10 @@ struct CommandInDetail: View {
             .padding()
             
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(.ultraThinMaterial)
+            .background(Color("xpress").gradient)
             
             .clipShape(RoundedRectangle(cornerRadius: 40.0, style: .circular))
             .padding()
-            .padding(.top, 80)
             .task{
                 //MARK: Read datas in the command to open
                 print(commande.services_quantity)

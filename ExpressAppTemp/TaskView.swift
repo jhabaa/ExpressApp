@@ -57,11 +57,11 @@ struct TaskView: View {
                             .scaleEffect(y:value ? 1 : 0 , anchor:.bottom)
                     }
                     .padding(5)
+                    .foregroundStyle(value ? .white : .primary)
                     .background{
                         RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .fill(.blue.gradient)
-                            .opacity(value ? 0.5 : 0)
-                            .blur(radius: 20)
+                            .fill(Color("xpress").gradient)
+                            .opacity(value ? 1 : 0)
                             .frame(width: 100)
                     }
                 }
@@ -73,7 +73,7 @@ struct TaskView: View {
 
         .background(.bar.shadow(.drop(radius: 5)))
         .clipShape(RoundedRectangle(cornerRadius: 20,style:.continuous))
-        .padding(.horizontal)
+        .padding()
         .scaleEffect(userdata.taskbar ? 1 : 0)
         .animation(.spring, value: userdata.pages)
         .offset(y: userdata.taskbar ? 0 : 100)

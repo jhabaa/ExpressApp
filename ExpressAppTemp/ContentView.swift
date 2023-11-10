@@ -72,37 +72,32 @@ struct ContentView: View {
    //@State var connection_error:Bool = true
     var body: some View {
         GeometryReader { GeometryProxy in
-            VStack(spacing:1){
+            VStack(spacing:0){
                 //MARK: Notification Header
-                HStack(alignment:.center){
+                HStack(alignment:.bottom){
                     Image(uiImage: (alerte.icon ?? UIImage(named: "logo180"))!)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 70)
-                        .tint(.blue)
-                        .background(.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .foregroundStyle(.white, .gray)
+                        
                     VStack(alignment:.leading){
                         Text(alerte.value)
                             .font(.custom("Ubuntu", size: 20))
                             .lineLimit(3)
                             .multilineTextAlignment(.leading)
                             .minimumScaleFactor(0.5)
+                            .foregroundStyle(.white)
                     }
                     Spacer()
                 }
                 .padding()
-                .frame(width: GeometryProxy.size.width, height: 100)
-                .background(.bar)
-                .background{
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .fill(Color("xpress"))
-                        .blur(radius: 50)
-                }
+                .frame(height: notificationPadding, alignment:.bottom)
+                .background(Color("xpress"))
                 .onChange(of: alerte.type) { V in
                     switch alerte.type {
                     case .amber:
-                        notificationPadding = 0
+                        notificationPadding = 150
                         Task{
                             DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 5, execute: DispatchWorkItem.init(block: {
                                 //Close notification
@@ -110,13 +105,12 @@ struct ContentView: View {
                             }))
                         }
                     case .none:
-                        notificationPadding = -250
+                        notificationPadding = 0
                     }
                 }
-                .padding(.top, notificationPadding)
+                //.padding(.top, notificationPadding)
                 .animation(.spring(blendDuration: 2), value: notificationPadding)
                // .transformEffect(.init(translationX: 0, y: -200))
-                
                 if appSettings.logged{
                     if appSettings.loggedAs == .administrator{
                         AdminView().transition(.identity)
@@ -125,7 +119,7 @@ struct ContentView: View {
                     
                     if appSettings.loggedAs == .user{
                         UserView().transition(.identity)
-                            .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .top)
+                            
                         .overlay(alignment: .bottom) {
                             TaskView()
                         }
@@ -140,8 +134,8 @@ struct ContentView: View {
                     }
                 }
             }
-            .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .top)
-            .edgesIgnoringSafeArea(.top)
+            .frame(maxWidth: .infinity, maxHeight:.infinity)
+            .edgesIgnoringSafeArea(.all)
             
             //server connection overlay
             ZStack{

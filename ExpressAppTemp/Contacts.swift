@@ -10,10 +10,10 @@ import SwiftUI
 struct Contacts: View {
     var body: some View {
         HStack(alignment: .top, spacing:0){
-            Rectangle().fill()
-                .frame(maxWidth: 5, maxHeight: .infinity)
-            VStack{
+            VStack(alignment:.leading){
                 VStack(alignment:.leading){
+                    Text("Ex-press Dry Clean")
+                        .font(.custom("Bariol_Regular", size: 20))
                     Text("Leuvensesteenweg 526 1930 Zaventem")
                         .foregroundColor(.gray)
                     Link("+32024204130", destination: URL(string: "tel:+32024204130")!)
@@ -42,18 +42,9 @@ struct Contacts: View {
                         }
                 })
             }
-            
-            
         }
-        .background{
-            Rectangle().fill(.bar)
-            Rectangle().fill(.gray.gradient.opacity(0.1))
-        }
-        .padding()
-        
-        
         .frame(maxWidth: .infinity,alignment: .leading)
-        
+        .background(.bar)
         // The background should be the 3D express logo
     }
 }

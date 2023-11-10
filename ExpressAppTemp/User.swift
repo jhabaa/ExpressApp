@@ -50,7 +50,7 @@ struct User:Codable,Hashable{
         self.phone = "01234567890"
         self.adress = "Rue de ter Plast 45 1020 Bruxelles/Brussel"
         self.password = "password"
-        self.type = "user"
+        self.type = "admin"
         self.loc_lat = 50.8817
         self.loc_lon = 4.34475
         self.province = "Région de Bruxelles-Capitale/Brussels Hoofdstedelijk Gewest"

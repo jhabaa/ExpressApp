@@ -291,6 +291,7 @@ struct Cart: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight:.infinity, alignment:.top)
                 .background(Color("xpress").gradient)
+                .foregroundStyle(.white, .gray)
             }
         }
         .frame(alignment: .bottom)
