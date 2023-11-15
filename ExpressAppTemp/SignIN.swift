@@ -32,9 +32,13 @@ struct IdentifiablePlace: Identifiable {
 }
 
 struct SignIN: View {
+    enum focusEntry:Hashable{
+        case username, usersurname, password, vpassword, GSM, mail
+    }
     @Namespace var namespace
     @EnvironmentObject var fetchModels:FetchModels
     @EnvironmentObject var appSettings:AppSettings
+    @Environment(\.colorScheme) var colorscheme
     @StateObject private var focusState = focusObjects()
     @EnvironmentObject var utilisateur:Utilisateur
     @State private var page:SignIn_pages = SignIn_pages()
@@ -47,33 +51,12 @@ struct SignIN: View {
     @State var stages:[signInStage] = [.username, .contact, .password, .adress]
     @State var stageIndex:Int = 0
     @State var stageIsValid:Bool = true
+    @FocusState var focusOn:focusEntry?
     var body: some View {
         GeometryReader {
             //Fond d'écran
-            ZStack (alignment: .center, content: {
-                Rectangle().fill(.clear).colorInvert()
-                
-            })
-            .background(.bar)
-            .background(
-                ZStack(content: {
-                    Circle()
-                        .fill(Color("xpress"))
-                        .blur(radius: 70)
-                        .offset(x:100,y:300)
-                        
-                        .animation(.pulse(), value: true)
-                    Rectangle()
-                        .fill(.green)
-                        .blur(radius: 60)
-                        .frame(width: 100, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/)
-                        .offset(x: -100, y: -200)
-                })
-                //Image(page.current!.introAssetImage)
-                   // .resizable()
-                    //.scaledToFill()
-                
-            )
+            RadialGradient(colors: [Color("xpress"), colorscheme == .dark ? .black : .white], center: .topLeading, startRadius: 100, endRadius: 800)
+                .blur(radius: 100)
             .ignoresSafeArea(.keyboard)
             .onTapGesture {
                 //return all to false first
@@ -95,50 +78,89 @@ struct SignIN: View {
                         .padding(.bottom, 70)
                     VStack(alignment:.leading){
                         Text(page.this.title)
-                            .font(.custom("Ubuntu", size: 50))
-                            .fontWeight(.bold)
+                            .font(.custom("BebasNeue", size: 70))
+                            //.fontWeight(.bold)
                             .padding(.top)
                             .minimumScaleFactor(0.4)
-                            
+                            .shadow(radius: 4)
                         Text(page.this.subTitle)
-                            .font(.custom("Ubuntu", size: 10))
-                            .foregroundColor(.gray)
+                            .font(.custom("Ubuntu", size: 20))
+                            
                     }
                     .frame(maxWidth: .infinity, alignment:.leading)
                     Spacer(minLength: 50)
                     
                     if page.current_index==1{
                         CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
+                            .focused($focusOn,equals: .username)
+                            .submitLabel(.next)
                             .padding(.horizontal)
                             .ignoresSafeArea(.keyboard)
                             
                         CustomTextField(_text: $utilisateur.this.surname, _element: "prenom",hideMode:false,type:.text, name:"Prenom d'utilisateur")
-                            .padding()
+                            .focused($focusOn,equals: .password)
                             .ignoresSafeArea(.keyboard)
+                            .padding()
+                            .submitLabel(.continue)
                         
                     }
-                    
-                    
-                    
                     if page.current_index==2{
                         CustomTextField(_text: $utilisateur.this.phone, _element: "gsm",hideMode:false, type: .phone)
+                            .focused($focusOn,equals: .GSM)
+                            .submitLabel(.next)
                             .ignoresSafeArea(.keyboard)
+                            .keyboardType(.phonePad)
+                           
                         CustomTextField(_text: $utilisateur.this.mail, _element: "email",hideMode:false,type:.text, name:"@Email")
+                            .focused($focusOn,equals: .mail)
                             .textCase(.lowercase)
                             .textContentType(.emailAddress)
                             .ignoresSafeArea(.keyboard)
+                            .submitLabel(.continue)
                     }
                     
                     if page.current_index == 3{
                         CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe",hideMode:false,type:.password, name:"Mot de passe")
+                            .focused($focusOn,equals: .password)
                             .ignoresSafeArea(.keyboard)
+                            .submitLabel(.next)
                         CustomTextField(_text: $v_password, _element: "v-mot de passe",hideMode:false,type:.password, name:"Entrez à nouveau")
+                            .focused($focusOn,equals: .vpassword)
                             .ignoresSafeArea(.keyboard)
+                            .submitLabel(.done)
                     }
                 }
-                
                 .ignoresSafeArea(.keyboard)
-                
+                .onSubmit {
+                    switch focusOn {
+                    case .username:
+                        focusOn = .usersurname
+                    case .usersurname:
+                        if (!utilisateur.this.isEmpty && !utilisateur.this.surname.isEmpty){
+                            stageIndex += 1
+                            page.next()
+                            focusOn = .GSM
+                        }
+                    case .password:
+                        focusOn = .vpassword
+                    case .vpassword:
+                        if (utilisateur.this.password == v_password){
+                            Task{
+                                userdata.loading = true
+                                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(2)){}
+                                primary_infos = (await utilisateur.register())
+                                //await fetchModels.FetchServices()
+                                userdata.loading = false
+                            }
+                        }
+                    case .GSM:
+                        focusOn = .mail
+                    case .mail:
+                        focusOn = .password
+                    case .none:
+                        break
+                    }
+                }
                 //return or prev
                 HStack{
                     Image(systemName: page.current_index == 1 ? "xmark" : "chevron.backward")
@@ -159,7 +181,6 @@ struct SignIN: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .padding()
-                
                 //===============Algo ============
                 //MARK: Show or not depending on the content
                 
@@ -175,8 +196,6 @@ struct SignIN: View {
                                 //await fetchModels.FetchServices()
                                 userdata.loading = false
                             }
-                            
-                        
                         default:
                             withAnimation(.spring()) {
                                 stageIndex += 1
@@ -185,6 +204,8 @@ struct SignIN: View {
                         }
                     }, label: {
                         Text("Continuer")
+                            .font(.title)
+                            .padding(2)
                             .frame(maxWidth: .infinity)
                     })
                 }
@@ -192,23 +213,18 @@ struct SignIN: View {
                 .buttonBorderShape(.roundedRectangle(radius: 10))
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: $0.size.width, maxHeight: $0.size.height, alignment: .bottom)
-                .ignoresSafeArea(.keyboard, edges: .bottom)
+                
                 .scaleEffect(
                     StageIsValid() ? 1 : 0
                 )
-                
             }
-            
         }
         .autocorrectionDisabled()
         .environmentObject(focusState)
         //On change
-        
         .onAppear {
             utilisateur.this = User()
         }
-        
-        
     }
     @State var place: IdentifiablePlace = .init(lat: 50, long: 50)
     @State var loading:Bool = false

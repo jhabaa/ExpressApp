@@ -18,6 +18,9 @@ extension Animation{
             .speed(0.1)
         
     }
+    static func infiniteEase()->Animation{
+        Animation.easeInOut(duration: 0.4).repeatForever(autoreverses: true).speed(0.5)
+    }
     static func extendMenu() -> Animation{
         Animation.spring(dampingFraction: 0.5, blendDuration: 2.5)
             .speed(2)
@@ -32,7 +35,7 @@ extension Animation{
             .delay(4)
     }
     static func pulse() -> Animation{
-        Animation.spring(response:1, blendDuration: 2).repeatForever(autoreverses: true)
+        Animation.spring(response:1, blendDuration: 0.4).repeatForever(autoreverses: true)
             .speed(0.4)
     }
     static func up() -> Animation{

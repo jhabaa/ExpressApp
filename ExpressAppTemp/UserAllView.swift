@@ -25,7 +25,7 @@ struct UserAllView: View {
         )
     var body: some View {
         GeometryReader {
-            let size = $0.size
+            _ in
             NavigationView {
                 List(){
                     Section {

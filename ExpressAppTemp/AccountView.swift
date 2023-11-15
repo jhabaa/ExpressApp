@@ -71,18 +71,9 @@ struct AccountView: View{
     @State var show_this_command:Bool = false
     @State var commandToView:Command=Command()
     var body: some View {
-        GeometryReader(content: { GeometryProxy in
-            //values
-            let s = GeometryProxy.size
-            let frameY = GeometryProxy.frame(in: .named("scroll")).minY
-            let minY = GeometryProxy.frame(in: .named("scroll")).minY + GeometryProxy.safeAreaInsets.top
-            
+        GeometryReader(content: { _ in
             UserDetailView(user: utilisateur.this)
 
-           
-            
-            
-           
             if !commandToView.isNil{
                 CommandInDetail(commande: $commandToView, client: utilisateur.this)
                     .onAppear{
@@ -94,33 +85,24 @@ struct AccountView: View{
                     .onDisappear{
                         show_options = .home
                     }
-                    
-                /*
-                    .onDisappear {
-                        withAnimation {
-                            Task{
-                                await commande.fetchForuser(utilisateur.this)
-                            }
-                            userdata.taskbar = true
-                        }
-                    }*/
+
             }
             
             
         })
         //.ignoresSafeArea(.container)
         .environmentObject(focusState)
-        .background()
+        .background{
+            RadialGradient(colors: [Color("xpress"), colorscheme == .dark ? .black : .white], center: .topLeading, startRadius: 100, endRadius: 700)
+                .blur(radius: 100)
+        }
         .onAppear{
             if utilisateur.this.isUser{
                 utilisateur.review = utilisateur.this
             }else{
                 utilisateur.review = userToReview
             }
-            
         }
-        
-        
     }
     
     @State var selectedADS:Int = 3
@@ -138,42 +120,6 @@ struct AccountView: View{
             }
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
-            /*
-            Section {
-                VStack{
-                    //Email entry
-                    TextField(text: $utilisateur.this.mail) {
-                        Label("Email", systemImage: "house")
-                    }
-                    //.disabled(!modifyMode)
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .textContentType(UITextContentType.emailAddress)
-                    .clipShape(Capsule())
-                    .onChange(of: utilisateur.this.mail) { V in
-                        email_is_ok = utilisateur.this.isMailIsCorrect
-                    }
-                    
-                }
-                .disabled(edit_mode)
-                //.multilineTextAlignment(.center)
-                
-                TextField("Adresse de livraison",text: $userdata.currentUser.adress) {
-                }
-                .padding()
-                .background(.ultraThinMaterial)
-                .textContentType(UITextContentType.emailAddress)
-                .clipShape(Capsule())
-                .onChange(of: userdata.currentUser.adress) { V in
-                    adress_new = userdata.CheckAddress()
-                }
-            } header: {
-                Text("Vos informations de contacts sont utilisées lors de commandes pour estimer le cout d'un livraison ou en cas besoin relatif à une commande ")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-            }
-            .padding()
-            */
             
         }
         .toolbar {
@@ -254,18 +200,3 @@ struct Previews_AccountView_Previews: PreviewProvider {
     }
 }
 
-//Function to switch between images each 5 seconds
-
-func backgroundImageSwitcher() -> AsyncImage<Image> {
-    
-    var result:Int = Int.random(in: 0...2)
-    //Switch every 5 seconds
-    while true {
-        //wait 5 seconds
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 30, execute: .init(block: {
-        result = Int.random(in: 0...2)
-        }))
-    }
-    
-    return AsyncImage(url: URL(string:"http://express.heanlab.com/getimage?name=\(result)"))
-}

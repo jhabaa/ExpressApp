@@ -295,9 +295,7 @@ struct Cart: View {
             }
         }
         .frame(alignment: .bottom)
-        
         //Background
-        .ignoresSafeArea()
         .background(.ultraThinMaterial)
         .background{
             RadialGradient(colors: [

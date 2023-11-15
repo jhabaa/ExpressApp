@@ -33,11 +33,13 @@
 		<string>Gotham-Black</string>
 		<string>Gotham-Light</string>
 		<string>Ubuntu-Light.ttf</string>
+		<string>Bariol_Bold</string>
+		<string>Bariol_Regular</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
-		<string>expressColor</string>
+		<string>launch</string>
 		<key>UIImageName</key>
 		<string>logo</string>
 	</dict>

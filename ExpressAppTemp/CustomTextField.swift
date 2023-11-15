@@ -29,38 +29,21 @@ struct CustomTextField: View {
                        
                             SecureField(_element, text: $_text)
                             .padding()
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                                 .onSubmit {
                                     FocusState.focus_in[_element] = false
                                 }
-                                .background{
-                                    let themeColor:Color = colorScheme == .dark ? .black : .white
-                                    RoundedRectangle(cornerRadius: 10).fill(themeColor.opacity(1))
-                                    RoundedRectangle(cornerRadius: 10).stroke(colorScheme == .dark ? .white : .black, lineWidth: 2)
-                                        .shadow(color: .gray, radius: 20)
-                                }
+                                
         
                     }else
                     if type == .phone{
-                        
-                            
                             TextField(_element, text: $_text)
                             .padding()
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                                 .onSubmit {
                                     FocusState.focus_in[_element] = false
                                 }
-                                .background{
-                                    let themeColor:Color = colorScheme == .dark ? .black : .white
-                                    RoundedRectangle(cornerRadius: 10).fill(themeColor.opacity(1))
-                                    RoundedRectangle(cornerRadius: 10).stroke(colorScheme == .dark ? .white : .black, lineWidth: 2)
-                                        .shadow(color: .gray, radius: 20)
-                                }
-                                
-                                
-                        
-                        
-                        
+                                .background(.clear)
                     }
                     else
                 if type == .text{
@@ -70,13 +53,8 @@ struct CustomTextField: View {
                                 _text = entry
                             }))
                             .padding()
-                            .multilineTextAlignment(.center)
-                            .background{
-                                let themeColor:Color = colorScheme == .dark ? .black : .white
-                                RoundedRectangle(cornerRadius: 10).fill(themeColor.opacity(1))
-                                RoundedRectangle(cornerRadius: 10).stroke(colorScheme == .dark ? .white : .black, lineWidth: 2)
-                                    .shadow(color: .gray, radius: 20)
-                            }
+                            .multilineTextAlignment(.leading)
+                            
                         
                         
                     }

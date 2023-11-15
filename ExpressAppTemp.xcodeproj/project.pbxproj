@@ -13,6 +13,9 @@
 		970B068229F4047400D2DD55 /* Coffee and Crafts.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 970B068129F4047300D2DD55 /* Coffee and Crafts.ttf */; };
 		970B068429F40B3300D2DD55 /* ModernAntiqua-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 970B068329F40B3300D2DD55 /* ModernAntiqua-Bold.ttf */; };
 		970C696729DA34F4006B4531 /* ServicesAllView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 970C696629DA34F4006B4531 /* ServicesAllView.swift */; };
+		971792252B04042A00A9DB4F /* vid2.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 971792242B04042A00A9DB4F /* vid2.mp4 */; };
+		972206902AFCFB6C00DFF44D /* Bariol_Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 9722068F2AFCFB6C00DFF44D /* Bariol_Bold.otf */; };
+		972206922AFCFC6C00DFF44D /* Bariol_Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 972206912AFCFC6B00DFF44D /* Bariol_Regular.otf */; };
 		9724B13D2817E921004E2438 /* UsersAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9724B13C2817E921004E2438 /* UsersAdminView.swift */; };
 		9724F12929A250AD00BFEF7F /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9724F12829A250AD00BFEF7F /* UserView.swift */; };
 		9732246229EB92BA00ADA97E /* Gotham-Thin.otf in Resources */ = {isa = PBXBuildFile; fileRef = 9732245D29EB92B900ADA97E /* Gotham-Thin.otf */; };
@@ -91,6 +94,9 @@
 		970B068129F4047300D2DD55 /* Coffee and Crafts.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Coffee and Crafts.ttf"; sourceTree = "<group>"; };
 		970B068329F40B3300D2DD55 /* ModernAntiqua-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ModernAntiqua-Bold.ttf"; sourceTree = "<group>"; };
 		970C696629DA34F4006B4531 /* ServicesAllView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesAllView.swift; sourceTree = "<group>"; };
+		971792242B04042A00A9DB4F /* vid2.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = vid2.mp4; sourceTree = "<group>"; };
+		9722068F2AFCFB6C00DFF44D /* Bariol_Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Bariol_Bold.otf; sourceTree = "<group>"; };
+		972206912AFCFC6B00DFF44D /* Bariol_Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Bariol_Regular.otf; sourceTree = "<group>"; };
 		9724B13C2817E921004E2438 /* UsersAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersAdminView.swift; sourceTree = "<group>"; };
 		9724F12829A250AD00BFEF7F /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserView.swift; sourceTree = "<group>"; };
 		9732245D29EB92B900ADA97E /* Gotham-Thin.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Gotham-Thin.otf"; sourceTree = "<group>"; };
@@ -214,6 +220,7 @@
 				97400A4129E8AA510016F99B /* ExpressAlpha1.xctestplan */,
 				97FC3F7529BC0EAA00574CB0 /* Colors.xcassets */,
 				9757346E2AE8CBB40035EC36 /* vid1.mp4 */,
+				971792242B04042A00A9DB4F /* vid2.mp4 */,
 				97E087762804BA2D00484D3E /* File.swift */,
 				979DC12127FE3A9B00E91F31 /* LoadingView.swift */,
 				97B6372227E141A7009BAE22 /* Extension.md */,
@@ -313,7 +320,9 @@
 				970B068129F4047300D2DD55 /* Coffee and Crafts.ttf */,
 				9732245E29EB92BA00ADA97E /* Gotham-Black.otf */,
 				974187FD2AEE1E720055DD32 /* BebasNeue-Regular.ttf */,
+				972206912AFCFC6B00DFF44D /* Bariol_Regular.otf */,
 				9732246029EB92BA00ADA97E /* Gotham-Bold.otf */,
+				9722068F2AFCFB6C00DFF44D /* Bariol_Bold.otf */,
 				975734742AEB61BE0035EC36 /* Calcula.ttf */,
 				9732245F29EB92BA00ADA97E /* Gotham-Light.otf */,
 				9732246E29EB9BC000ADA97E /* RichardSamuels.otf */,
@@ -397,18 +406,21 @@
 				970B068229F4047400D2DD55 /* Coffee and Crafts.ttf in Resources */,
 				975734772AEB6A050035EC36 /* SadMachine.ttf in Resources */,
 				970B068029F4040200D2DD55 /* GashingtonClassy.ttf in Resources */,
+				972206902AFCFB6C00DFF44D /* Bariol_Bold.otf in Resources */,
 				970B067F29F403FD00D2DD55 /* RichardSamuels.otf in Resources */,
 				9732246529EB92BA00ADA97E /* Gotham-Bold.otf in Resources */,
 				9732246229EB92BA00ADA97E /* Gotham-Thin.otf in Resources */,
 				97CA4FB829DB59A60062ADBE /* Outfit-VariableFont_wght.ttf in Resources */,
 				9757346F2AE8CBB40035EC36 /* vid1.mp4 in Resources */,
 				97FC3F7629BC0EAA00574CB0 /* Colors.xcassets in Resources */,
+				971792252B04042A00A9DB4F /* vid2.mp4 in Resources */,
 				9732246329EB92BA00ADA97E /* Gotham-Black.otf in Resources */,
 				9732246629EB92BA00ADA97E /* Gotham-ThinItalic.otf in Resources */,
 				978F39F1298DCEED00033C94 /* Ubuntu-Light.ttf in Resources */,
 				9772310327BAFF2500191C57 /* Preview Assets.xcassets in Resources */,
 				9772310027BAFF2500191C57 /* Assets.xcassets in Resources */,
 				9732246429EB92BA00ADA97E /* Gotham-Light.otf in Resources */,
+				972206922AFCFC6C00DFF44D /* Bariol_Regular.otf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -620,13 +632,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExpressAppTemp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ExpressBeta;
+				INFOPLIST_KEY_CFBundleDisplayName = "Ex-press Dry Clean";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nous avons besoin d'accéder au GPS de votre GSM pour retrouver les adresses disponibles, pour correctement inscrire les adresses dans différentes langues et estimer les coûts de livraison de la commande ";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UIStatusBarHidden = NO;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -662,13 +674,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ExpressAppTemp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ExpressBeta;
+				INFOPLIST_KEY_CFBundleDisplayName = "Ex-press Dry Clean";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nous avons besoin d'accéder au GPS de votre GSM pour retrouver les adresses disponibles, pour correctement inscrire les adresses dans différentes langues et estimer les coûts de livraison de la commande ";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UIStatusBarHidden = NO;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;

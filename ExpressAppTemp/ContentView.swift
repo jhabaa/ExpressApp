@@ -79,7 +79,7 @@ struct ContentView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 70)
-                        .foregroundStyle(.white, .gray)
+                        //.foregroundStyle(.white, .gray)
                         
                     VStack(alignment:.leading){
                         Text(alerte.value)
@@ -87,17 +87,17 @@ struct ContentView: View {
                             .lineLimit(3)
                             .multilineTextAlignment(.leading)
                             .minimumScaleFactor(0.5)
-                            .foregroundStyle(.white)
+                            //.foregroundStyle(.white)
                     }
                     Spacer()
                 }
                 .padding()
                 .frame(height: notificationPadding, alignment:.bottom)
-                .background(Color("xpress"))
+                .background(.bar)
                 .onChange(of: alerte.type) { V in
                     switch alerte.type {
                     case .amber:
-                        notificationPadding = 150
+                        notificationPadding = 100
                         Task{
                             DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 5, execute: DispatchWorkItem.init(block: {
                                 //Close notification
@@ -108,35 +108,25 @@ struct ContentView: View {
                         notificationPadding = 0
                     }
                 }
-                //.padding(.top, notificationPadding)
                 .animation(.spring(blendDuration: 2), value: notificationPadding)
-               // .transformEffect(.init(translationX: 0, y: -200))
-                if appSettings.logged{
-                    if appSettings.loggedAs == .administrator{
-                        AdminView().transition(.identity)
-                            .animation(.spring(blendDuration: 2), value: notificationPadding)
-                    }
-                    
-                    if appSettings.loggedAs == .user{
-                        UserView().transition(.identity)
-                            
+                //MARK: PAGES
+                switch appSettings.loggedAs{
+                case .administrator:
+                    AdminView()
+                        .opacity(appSettings.loggedAs == .administrator ? 1 : 0)
+                case .user:
+                    UserView()
+                        .opacity(appSettings.loggedAs == .user ? 1 : 0)
                         .overlay(alignment: .bottom) {
                             TaskView()
                         }
-                        .animation(.spring(blendDuration: 2), value: notificationPadding)
-                    }
-                }else{
-                    VStack{
-                        FirstScreen(showMenu: $showMenu, showHome: $home)
-                            .zIndex(3)
-                            .animation(.spring(), value: appSettings.logged)
-                            .animation(.spring(blendDuration: 2), value: notificationPadding)
-                    }
+                case .none:
+                    FirstScreen(showMenu: $showMenu, showHome: $home)
                 }
+                
             }
             .frame(maxWidth: .infinity, maxHeight:.infinity)
-            .edgesIgnoringSafeArea(.all)
-            
+            //.edgesIgnoringSafeArea(.top)
             //server connection overlay
             ZStack{
                 LoadingView()
@@ -152,10 +142,6 @@ struct ContentView: View {
             .frame(width: GeometryProxy.size.width, height: GeometryProxy.size.height, alignment: .center)
         }
         .textInputAutocapitalization(.never)
-        //debug
-        .onChange(of: appSettings.logged, perform: { newValue in
-            print(newValue)
-        })
         .confirmationDialog("Erreur de connexion", isPresented: $appSettings.connection_error) {
             Button("Réessayer", role: ButtonRole.destructive) {
                 Task{

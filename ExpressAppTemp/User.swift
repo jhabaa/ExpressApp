@@ -137,7 +137,7 @@ struct User:Codable,Hashable{
 }
 
 final class Utilisateur:ObservableObject{
-    @Published var this:User = User(name:"John")
+    @Published var this:User = User()
     @Published var review:User = User(name:"John")
     @Published var all:Set<User> = []
     
@@ -146,7 +146,7 @@ final class Utilisateur:ObservableObject{
     /// - Parameter user: the user that we want to recover datas
     /// - Returns: true if recovery process done. False otherwise
     func ResetPassword(_ user:User)->Bool{
-        guard let encoded = try? JSONEncoder().encode(user) else{
+        guard (try? JSONEncoder().encode(user)) != nil else{
             return false
         }
         print("Reinitialization for mail : \(user.mail)")
