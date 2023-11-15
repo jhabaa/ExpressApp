@@ -137,7 +137,7 @@ struct User:Codable,Hashable{
 }
 
 final class Utilisateur:ObservableObject{
-    @Published var this:User = User(name:"John")
+    @Published var this:User = User()
     @Published var review:User = User(name:"John")
     @Published var all:Set<User> = []
     

@@ -48,8 +48,10 @@ class LoopingPlayerUIView: UIView {
     }
     override init(frame: CGRect) {
         super.init(frame: frame)
+        let rndNumber:Int = Int.random(in: 0...1)
+        let choice:[String]=["vid1","vid2"]
         // Load the resource -> h
-        let fileUrl = Bundle.main.url(forResource: "vid1", withExtension: "mp4")!
+        let fileUrl = Bundle.main.url(forResource: choice[rndNumber], withExtension: "mp4")!
         let asset = AVAsset(url: fileUrl)
         let item = AVPlayerItem(asset: asset)
         // Setup the player
@@ -97,6 +99,8 @@ fileprivate struct RemoveBackgroundColorSheet:UIViewRepresentable{
     }
 }
 
+
+
 struct FirstScreen: View {
     enum user_field{
         case username
@@ -113,6 +117,7 @@ struct FirstScreen: View {
         case cp
         case city
     }
+    
 
     @EnvironmentObject var fetchModels:FetchModels
     @EnvironmentObject var userdata:UserData
@@ -124,7 +129,6 @@ struct FirstScreen: View {
     @StateObject private var focusState = focusObjects()
     @FocusState var focustate:adress_field?
     @FocusState var focusField:user_field?
-    //@AppStorage("id") private var id = ""
     @State var signInView:Bool = false
     @State var notification:Bool = false
     @State var connectionView:Bool = false
@@ -174,7 +178,6 @@ struct FirstScreen: View {
                             Capsule()
                                 .fill()
                                 .shadow(color: Color("xpress").opacity(0.8), radius: 10)
-                                
                         }
                         .padding(.vertical, 30)
                         .onTapGesture {
@@ -225,18 +228,40 @@ struct FirstScreen: View {
                 VStack{
                     VStack{
                         VStack{
-                            CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
-                                .focused($focusedArea, equals: .username)
-                                .submitLabel(.next)
-                                
-                                    //.shadow(color: .secondary, radius: 5)
-                            //Password
+                            HStack(spacing:0){
+                                Image(systemName: "person.crop.square.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 50)
+                                CustomTextField(_text: $utilisateur.this.name, _element: "utilisateur",hideMode:false, type:.text, name:"Nom d'utilisateur")
+                                    .focused($focusedArea, equals: .username)
+                                    .submitLabel(.next)
+                            }
+                            .focused($focusedArea, equals: .username)
+                            //.clipShape(RoundedRectangle(cornerRadius: 10))
+                            .background {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(.blue.opacity(focusedArea == .username ? 1 : 0), lineWidth: 2)
+                            }
+                            //Password Field
+                            HStack(spacing:0){
+                                Image(systemName: "key.viewfinder")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 50)
                                 CustomTextField(_text: $utilisateur.this.password, _element: "mot de passe"
                                     ,hideMode:false,
                                     type:.password)
                                 .focused($focusedArea, equals: .password)
                                 .submitLabel(.continue)
-                                //.shadow(color: .secondary, radius: 5)
+                            }
+                            .focused($focusedArea, equals: .password)
+                            .background {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(.blue.opacity(focusedArea == .password ? 1 : 0), lineWidth: 2)
+                                   
+                            }
+                            
                             //Bouton
                             Button {
                                 appSettings.loading = true
@@ -247,7 +272,7 @@ struct FirstScreen: View {
                                     appSettings.connection_error = utilisateur.this.isEmpty
                                     //MARK: If everything is okay lets change the view and keep out the loading page
                                     if !appSettings.connection_error{
-                                        appSettings.connect() // Connect the user to the interface
+                                        appSettings.connect(utilisateur.this.type) // Connect the user to the interface
                                         alerte.NewNotification(.amber, "Bonjour \(utilisateur.this.name)", UIImage(systemName: "person.crop.circle.fill.badge.checkmark"))
                                     }
                                     appSettings.loading = false //Turn off the loading view
@@ -255,16 +280,22 @@ struct FirstScreen: View {
                                 }
                                 
                             } label: {
-                                VStack{
+                                let emptyNameAndPassword = (utilisateur.this.name.isEmpty || utilisateur.this.password.isEmpty)
                                     Text("Se Connecter").font(.system(size: 20))
                                         .padding()
                                         .foregroundStyle(colorScheme == .dark ? .black : .white)
-                                }
-                                .shadow(radius: 5)
-                                .frame(maxWidth: .infinity)
+                                        .background{
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .opacity(emptyNameAndPassword ? 0 : 1)
+                                                .animation(.spring, value: emptyNameAndPassword)
+                                                
+                                        }
+                                        .opacity(emptyNameAndPassword ? 0 : 1)
+                                        .offset(y:emptyNameAndPassword ? 100 : 0)
+                                        .animation(.spring, value: emptyNameAndPassword)
                             }
                             .padding()
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.borderless)
                             .buttonBorderShape(.roundedRectangle(radius: 10))
                             .tint(colorScheme == .dark ? .white : .black)
                         }
@@ -284,14 +315,15 @@ struct FirstScreen: View {
                         #warning("Have to implement this in the backend before activate")
                     }
                     .padding()
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
+                    //.background(.ultraThinMaterial)
+                    //.clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
                     .shadow(radius: 2)
                     .padding(20)
                     .frame(maxWidth: 390)
                    
-                    .ignoresSafeArea(.container)
+                   
                 }
+                .preferredColorScheme(.dark)
                 .frame(maxWidth: .infinity, maxHeight:.infinity, alignment:.bottom)
                 .onSubmit {
                     switch focusedArea {
@@ -303,7 +335,7 @@ struct FirstScreen: View {
                             utilisateur.this = await utilisateur.connect(user: utilisateur.this) ?? User()
                             appSettings.connection_error = utilisateur.this.isEmpty
                             if !appSettings.connection_error{
-                                appSettings.connect() // Connect the user to the interface
+                                appSettings.connect(utilisateur.this.type) // Connect the user to the interface
                                 appSettings.loading = false //Turn off the loading view
                             }
                         }
@@ -312,10 +344,9 @@ struct FirstScreen: View {
                     }
                 }
             }
-           
-            
             if signInView{
                 SignIN(_show: $signInView, place: IdentifiablePlace.init(lat: 50.8, long: 4))
+                    .background(.ultraThinMaterial)
             }
         }
         .onTapGesture {
@@ -332,7 +363,7 @@ struct FirstScreen: View {
                         PlayerView()
                             .blur(radius: connectionPresentation ? 12.4 : 0, opaque: true)
                             .overlay(alignment: .top) {
-                                LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .top, endPoint: .center)
+                               // LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .top, endPoint: .center)
                                     
                                     
                                 LinearGradient(colors: [Color("fond").opacity(1),Color("fond").opacity(colorWhenPresentationIsOff)], startPoint: .bottom, endPoint: .center)
@@ -340,30 +371,21 @@ struct FirstScreen: View {
                             }
                             .ignoresSafeArea()
                     }else{
-                        RoundedRectangle(cornerRadius: 60, style: .continuous)
-                            .stroke(lineWidth: 20)
-                            .ignoresSafeArea(.all)
-                            .background{
-                                Circle().fill(Color("xpress"))
-                                    .frame(width: 100)
-                                    .blur(radius: 5)
-                                    .shadow(color: Color.green, radius: 100)
-                                    .offset(x:-50,y:70)
-                                Circle().fill(Color.green)
-                                    .frame(width: 200)
-                                    .blur(radius: 10)
-                                    .shadow(color: Color.green, radius: 100)
-                                    .offset(x:100,y:300)
-                            }
-                            
-                            .foregroundStyle(colorScheme == .dark ? .black : .white)
+                        
+                            RadialGradient(colors: [Color("xpress"), colorScheme == .dark ? .black : .white], center: .topLeading, startRadius: 100, endRadius: 700)
+                                .blur(radius: 100)
+                        
                     }
                     
                 }
                 .frame(maxWidth:.infinity, maxHeight:.infinity)
-                    .overlay(alignment: .top) {
+                .overlay(alignment: signInView ? .topTrailing : .top) {
                         ExpressLogo()
                             .matchedGeometryEffect(id: "logo", in: namespace)
+                            .offset(y:50)
+                            .scaleEffect((connectionPresentation || signInView) ? 0.5 : 1)
+                            .opacity(signInView ? 0.4 : 1)
+                            .animation(.spring(response: 0.2, dampingFraction: 0.3), value: connectionPresentation)
                     }
                     .onTapGesture{
                         connectionPresentation = false

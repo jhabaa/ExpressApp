@@ -110,7 +110,10 @@ struct AccountView: View{
         })
         //.ignoresSafeArea(.container)
         .environmentObject(focusState)
-        .background()
+        .background{
+            RadialGradient(colors: [Color("xpress"), colorscheme == .dark ? .black : .white], center: .topLeading, startRadius: 100, endRadius: 700)
+                .blur(radius: 100)
+        }
         .onAppear{
             if utilisateur.this.isUser{
                 utilisateur.review = utilisateur.this

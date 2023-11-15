@@ -63,6 +63,7 @@ struct TaskView: View {
                             .fill(Color("xpress").gradient)
                             .opacity(value ? 1 : 0)
                             .frame(width: 100)
+                            //.matchedGeometryEffect(id: "currentPage", in: namespace)
                     }
                 }
                 .tint(.primary)
