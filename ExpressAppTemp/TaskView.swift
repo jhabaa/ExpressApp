@@ -14,7 +14,7 @@ struct TaskView: View {
     @EnvironmentObject var commande:Commande
     @Environment(\.colorScheme) var colorscheme
     @State var sizeOfPage:CGSize = CGSize.init()
-    @Namespace var namespace:Namespace.ID
+    @Namespace var baranimation
     var body: some View {
 //===================== Taches du jour ==================================
         
@@ -59,11 +59,14 @@ struct TaskView: View {
                     .padding(5)
                     .foregroundStyle(value ? .white : .primary)
                     .background{
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .fill(Color("xpress").gradient)
-                            .opacity(value ? 1 : 0)
-                            .frame(width: 100)
-                            //.matchedGeometryEffect(id: "currentPage", in: namespace)
+                        if value{
+                            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                .fill(Color("xpress").gradient)
+                                .opacity(value ? 1 : 0)
+                                .frame(width: 100)
+                                .matchedGeometryEffect(id: "currentPage", in: baranimation)
+                        }
+                        
                     }
                 }
                 .tint(.primary)
@@ -76,7 +79,7 @@ struct TaskView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20,style:.continuous))
         .padding()
         .scaleEffect(userdata.taskbar ? 1 : 0)
-        .animation(.spring, value: userdata.pages)
+        .animation(.spring(duration: 0.4, blendDuration: 0.2), value: userdata.pages)
         .offset(y: userdata.taskbar ? 0 : 100)
         
         }

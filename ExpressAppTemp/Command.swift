@@ -52,7 +52,7 @@ struct Command:Hashable,Codable{
         self.enter_date = Date.init().mySQLFormat()
         self.return_date = Date.init().mySQLFormat()
         self.date_ = Date.init().mySQLFormat()
-        self.services_quantity = "8:4,6:1"
+        self.services_quantity = "50:4,47:1"
         self.agent = 1
         self.user = Int32()
     }
@@ -90,6 +90,52 @@ struct Command:Hashable,Codable{
         }
     }
     
+    /// Function to update a command on the server
+    /// - Parameter _command: command to update
+    /// - Returns: Returns true if command is updated successfully, false otherwise
+    func Update() async -> Bool{
+        print(self)
+        guard let encoded = try? JSONEncoder().encode(self) else{
+            print("erreur d'encodage")
+            return false
+        }
+        let url = URL(string:"http://\(urlServer):\(urlPort)/updatecommand")!
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-type")
+        request.httpMethod = "POST"
+        do{
+            let (_, _) = try await URLSession.shared.upload(for: request, from: encoded)
+            print("Updated Command")
+            return true
+        } catch{
+            print("Upload command impossible")
+            return false
+        }
+    }
+    
+    ///Function to recover with an entry message styled as ServiceID:Quantity,
+    /// an dictionnary Panier and return it
+    func ReadCommand(_ article : Article) -> Set<Achat>{
+        var list:Set<Achat> = []
+        if self.services_quantity.contains(","){
+            for element in self.services_quantity.split(separator: ","){
+                print(element)
+                let serviceID = Int(element.split(separator: ":")[0])!
+                let quantity = Int(element.split(separator: ":")[1])!
+                
+                //panier.toCart(Achat(article.GetService(serviceID, quantity)))
+                //panier.toCart(Achat(article.GetService(id: serviceID), quantity))
+                list.insert(Achat(article.GetService(id: serviceID), quantity))
+            }
+        }else{ //no comma, then we have only one article
+            let serviceID = Int(self.services_quantity.split(separator: ":")[0])!
+            let quantity = Int(self.services_quantity.split(separator: ":")[1])!
+            list.insert(Achat(article.GetService(id: serviceID), quantity))
+            //result_list[self.all_services[serviceID]!] = Int(exactly: quantity)!
+        }
+        
+        return list
+    }
     
    
 }
@@ -97,7 +143,6 @@ struct Command:Hashable,Codable{
 final class Commande:Panier{
     @Published var this : Command = Command()
     @Published var all : [Command] = []
-    @Published var review : Panier = Panier()
     @Published var confirmed:Bool=false
     @Published var edit:Bool = false
     //Getters & Setters
@@ -276,53 +321,7 @@ final class Commande:Panier{
         }
     }
     
-    /// Function to update a command on the server
-    /// - Parameter _command: command to update
-    /// - Returns: Returns true if command is updated successfully, false otherwise
-    func Put_Command() async -> Bool{
-        print(self.this)
-        guard let encoded = try? JSONEncoder().encode(this) else{
-            print("erreur d'encodage")
-            return false
-        }
-        let url = URL(string:"http://\(urlServer):\(urlPort)/updatecommand")!
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Content-type")
-        request.httpMethod = "POST"
-        do{
-            let (_, _) = try await URLSession.shared.upload(for: request, from: encoded)
-            print("Updated Command")
-            return true
-        } catch{
-            print("Upload command impossible")
-            return false
-        }
-    }
-    
-    ///Function to recover with an entry message styled as ServiceID:Quantity,
-    /// an dictionnary Panier and return it
-    func ReadCommand_List(list:String, article:Article) -> Panier{
-        print(list)
-        var panier:Panier = Panier()
-        if list.contains(","){
-            for element in list.split(separator: ","){
-                print(element)
-                let serviceID = Int(element.split(separator: ":")[0])!
-                let quantity = Int(element.split(separator: ":")[1])!
-                
-                //panier.toCart(Achat(article.GetService(serviceID, quantity)))
-                panier.toCart(Achat(article.GetService(id: serviceID), quantity))
-                
-            }
-        }else{ //no comma, then we have only one article
-            let serviceID = Int(list.split(separator: ":")[0])!
-            let quantity = Int(list.split(separator: ":")[1])!
-            panier.toCart(Achat(article.GetService(id: serviceID), quantity))
-            //result_list[self.all_services[serviceID]!] = Int(exactly: quantity)!
-        }
-        
-        return panier
-    }
+
     
     ///get total cost of the command test
     var TotalCost:Decimal{
@@ -355,8 +354,6 @@ final class Commande:Panier{
             result[a] = []
         }
         //Now wa have it, we can add commands of the date
-        
-        
         for command in self.all.filter({$0.enter_date == date.mySQLFormat()}) {
             result[Int(command.enter_time)!]?.append(command)
         }

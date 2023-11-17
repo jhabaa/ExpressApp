@@ -25,6 +25,8 @@
 		9732246629EB92BA00ADA97E /* Gotham-ThinItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 9732246129EB92BA00ADA97E /* Gotham-ThinItalic.otf */; };
 		9732247029EC556A00ADA97E /* Contacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9732246F29EC556A00ADA97E /* Contacts.swift */; };
 		9732247229EC768600ADA97E /* _CouponsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9732247129EC768600ADA97E /* _CouponsView.swift */; };
+		9735A9A22B05830200ABF31C /* MyTaskbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9735A9A12B05830200ABF31C /* MyTaskbar.swift */; };
+		9735A9A42B058F2F00ABF31C /* AdminCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9735A9A32B058F2F00ABF31C /* AdminCommandView.swift */; };
 		973710F529D9D13B00E07FDD /* PagesRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973710F429D9D13B00E07FDD /* PagesRegistration.swift */; };
 		973DE37929C9B0F800321CC7 /* UserAllView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973DE37829C9B0F800321CC7 /* UserAllView.swift */; };
 		973E1B562A055D9E0099E2FB /* protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973E1B552A055D9E0099E2FB /* protocols.swift */; };
@@ -108,6 +110,8 @@
 		9732246E29EB9BC000ADA97E /* RichardSamuels.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = RichardSamuels.otf; sourceTree = "<group>"; };
 		9732246F29EC556A00ADA97E /* Contacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Contacts.swift; sourceTree = "<group>"; };
 		9732247129EC768600ADA97E /* _CouponsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = _CouponsView.swift; sourceTree = "<group>"; };
+		9735A9A12B05830200ABF31C /* MyTaskbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyTaskbar.swift; sourceTree = "<group>"; };
+		9735A9A32B058F2F00ABF31C /* AdminCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminCommandView.swift; sourceTree = "<group>"; };
 		973710F429D9D13B00E07FDD /* PagesRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagesRegistration.swift; sourceTree = "<group>"; };
 		973DE37829C9B0F800321CC7 /* UserAllView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAllView.swift; sourceTree = "<group>"; };
 		973E1B552A055D9E0099E2FB /* protocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = protocols.swift; sourceTree = "<group>"; };
@@ -251,6 +255,7 @@
 				973E1B542A055D8A0099E2FB /* Protocols */,
 				97DA43C329EF1EB300950A08 /* Command_confirmation.swift */,
 				97A9D506281C4606003E481E /* DateSelectionView.swift */,
+				9735A9A12B05830200ABF31C /* MyTaskbar.swift */,
 				973E1B572A05A9900099E2FB /* Extensions */,
 				97DA43C129EEEFEC00950A08 /* Date_selector_View.swift */,
 				97CA4FB929DB74BA0062ADBE /* ImageRepresentable.swift */,
@@ -265,6 +270,7 @@
 				97A9D50E28207472003E481E /* CommandAllView.swift */,
 				97DB225129F6DD32006684DA /* Add_Article_to_COMMAND.swift */,
 				9767B2B429EEBFEC00F1C01E /* Cart.swift */,
+				9735A9A32B058F2F00ABF31C /* AdminCommandView.swift */,
 				975734672AE895CF0035EC36 /* Days.swift */,
 				9746F3822A50B3970020876D /* Coupon.swift */,
 				977230FD27BAFF2400191C57 /* ContentView.swift */,
@@ -435,6 +441,7 @@
 				9724B13D2817E921004E2438 /* UsersAdminView.swift in Sources */,
 				97DA43C629EF357900950A08 /* WeekdaysOnlyDatePicker.swift in Sources */,
 				9746F37F2A4E7B820020876D /* CartView.swift in Sources */,
+				9735A9A22B05830200ABF31C /* MyTaskbar.swift in Sources */,
 				97B6372427E141D3009BAE22 /* AnimExtensions.swift in Sources */,
 				973E1B592A05A9AD0099E2FB /* extensions.swift in Sources */,
 				975734712AE8E4310035EC36 /* LocationManager.swift in Sources */,
@@ -454,6 +461,7 @@
 				9732247229EC768600ADA97E /* _CouponsView.swift in Sources */,
 				9746F3832A50B3970020876D /* Coupon.swift in Sources */,
 				977230FE27BAFF2400191C57 /* ContentView.swift in Sources */,
+				9735A9A42B058F2F00ABF31C /* AdminCommandView.swift in Sources */,
 				97A9D50F28207472003E481E /* CommandAllView.swift in Sources */,
 				9757346A2AE89EC00035EC36 /* AdressSelectorView.swift in Sources */,
 				9746F37D2A4E17930020876D /* achat.swift in Sources */,

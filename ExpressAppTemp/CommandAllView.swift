@@ -29,7 +29,7 @@ struct CommandAllView: View {
     @EnvironmentObject var daysOff:Days
     @EnvironmentObject var alerte:Alerte
     @State var commandList:[GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
-    @State var selectedCommand:Command = Command.init()
+    @State var selectedCommand:Command = Command()
     @State var showDetailCommand:Bool = false
     @State var details_command:Bool = false
     @EnvironmentObject var userdata:UserData
@@ -46,6 +46,7 @@ struct CommandAllView: View {
     @State var daysSelectorView:Bool = false
     @State var DateUniqueSelector:Bool = false
     @State var datesBis:Set<DateComponents>=[]
+    @State var commandeEditor:Bool = false
     var body: some View {
         GeometryReader { GeometryProxy in
             let size = GeometryProxy.size
@@ -118,6 +119,7 @@ struct CommandAllView: View {
                                 }
                             }
                         }else{
+                            
                             ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
                                 Section {
                                     VStack {
@@ -126,6 +128,7 @@ struct CommandAllView: View {
                                             let state:Bool = com.enter_date == selectedDate.mySQLFormat() ? true : false
                                             
                                             //command card
+                                            
                                             HStack{
                                                 //marker
                                                 Rectangle().fill(!state ? .red : .blue)
@@ -165,9 +168,9 @@ struct CommandAllView: View {
                                             }
                                             .onTapGesture {
                                                 //To the trick : lets open the command interface
-                                                //selectedCommand = com
-                                                commande.services = commande.ReadCommand_List(list: com.services_quantity, article: article).services
-                                                commande.editMode(com)
+                                                selectedCommand = com
+                                                //commande.editMode(com)
+                                                commandeEditor = true
                                             }
                                         }
                                     }
@@ -176,7 +179,6 @@ struct CommandAllView: View {
                                     if !commands_per_hour[hour]!.isEmpty{
                                         Text("\(hour)h")
                                     }
-                                    
                                 }
                             }
                         }
@@ -224,8 +226,9 @@ struct CommandAllView: View {
             .onChange(of: minY) { V in
                 print(minY)
             }
-            if commande.edit{
-                CommandDetailView(userdata: _userdata)
+            if commandeEditor{
+                CommandDetailView( commande: selectedCommand, show: $commandeEditor)
+                    .background()
             }
             
             

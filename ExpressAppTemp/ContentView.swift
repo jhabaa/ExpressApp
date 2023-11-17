@@ -122,6 +122,7 @@ struct ContentView: View {
                         }
                 case .none:
                     FirstScreen(showMenu: $showMenu, showHome: $home)
+                        
                 }
                 
             }

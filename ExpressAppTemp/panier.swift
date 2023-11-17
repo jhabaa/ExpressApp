@@ -10,7 +10,7 @@ import Foundation
 class Panier:ObservableObject{
     @Published var services:Set<Achat>=[]
     @Published var command:Command=Command()
-    
+
     /// Return the total amount of a cart
     var getCost:Decimal{
         var r:Decimal=Decimal()

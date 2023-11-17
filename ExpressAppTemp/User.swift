@@ -23,7 +23,7 @@ struct User:Codable,Hashable{
     
     
     init() {
-        self.id = Int32()
+        self.id = 1
         self.name = String.init()
         self.surname = String.init()
         self.mail = String()

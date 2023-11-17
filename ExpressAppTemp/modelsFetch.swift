@@ -550,7 +550,14 @@ final class UserData:ObservableObject{
         let string = parts.joined(separator: ",")
         return "\(string)"
     }
-    
+    func cartToString(_ dictionary: Set<Achat>) -> String {
+        var parts: [String] = []
+        dictionary.forEach { achat in
+            parts.append("\(achat.service.id):\(achat.quantity)")
+        }
+        let string = parts.joined(separator: ",")
+        return "\(string)"
+    }
     
     
     //Function to go a specific page

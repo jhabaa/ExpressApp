@@ -37,7 +37,7 @@ struct Add_Article_to_COMMAND: View {
                         }
                         //.frame(maxHeight: 120)
                         .onTapGesture(count: 2, perform: {
-                            var n = cart[service] ?? 0
+                            let n = cart[service] ?? 0
                             
                             cart.updateValue(n+1, forKey: service)
                         })
