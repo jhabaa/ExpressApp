@@ -40,8 +40,6 @@ struct ServicesAllView: View {
     private let formatterDec: NumberFormatter = {
             let formatterDec = NumberFormatter()
             formatterDec.numberStyle = .decimal
-            //formatter.minimumFractionDigits = 2
-            //formatter.maximumFractionDigits = 2
             return formatterDec
         }()
     private let formatterInt: NumberFormatter = {
@@ -59,10 +57,9 @@ struct ServicesAllView: View {
             Section {
                 //all services by categories
                 if !_search.isEmpty{
-                    Section("Resultats") {
                         ForEach(article.all.sorted(by: {$0.id < $1.id}), id: \.self) { service in
                             //Set a section with category as title
-                            if (service.categories.contains(_search) || service.name.contains(_search) || service.description.contains(_search)){
+                            if (service.categories.uppercased().contains(_search.uppercased()) || service.name.uppercased().contains(_search.uppercased()) || service.description.uppercased().contains(_search.uppercased())){
                                 
                                 NavigationLink {
                                     ServiceModifierView(service:service)
@@ -80,70 +77,71 @@ struct ServicesAllView: View {
                                                 .foregroundColor(.gray)
                                         }
                                     }
-                                    .badge("price")
+                                    .badge("\(service.cost.formatted())€")
                                 }
                                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                     Button("Supprimer"){
                                         //delete service code
-                                        let response = Task{
-                                           return await service.Delete()
+                                        Task{
+                                            appSettings.loading = true
+                                            appSettings.connection_error = !(await service.Delete()) //Delete this service and show error if happen
+                                            appSettings.connection_error = !(await article.fetch()) //Actualize services list
+                                            appSettings.loading = appSettings.connection_error ? false : true
                                         }
-                                        print(response)
                                     }
                                     .tint(.red)
                                 }
                             }
                         }
-                    }
-                    
                 }
             }
             List(article.all.sorted(by: {$0.id < $1.id}), id:\.self) { service in
                 NavigationLink(service.name, value: service)
-                
+                    .badge("\(service.cost.formatted())€")
+                    
                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                     Button("Supprimer",role:.destructive){
                         //delete service code
-                        appSettings.loading = true
+                        
                         Task{
+                            appSettings.loading = true
                             appSettings.connection_error = !(await service.Delete()) //Delete this service and show error if happen
                             appSettings.connection_error = !(await article.fetch()) //Actualize services list
                             appSettings.loading = appSettings.connection_error ? false : true
                         }
-                        
                     }
                     .tint(.red)
                 }
                 .frame(maxWidth: .infinity)
             }
-            .listStyle(.plain)
+           // .listStyle(.plain)
             .frame(maxWidth: .infinity)
             .navigationDestination(for: Service.self) { service in
-                ServiceModifierView(service:service)
+                ServiceModifierView(service:service, mode:.update)
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.immediately)
             .toolbar {
-
                 NavigationLink {
-                    AddArticleView()
+                    ServiceModifierView(service:Service(""), mode:.new)
                 } label: {
-                    Label("Ajouter", systemImage: "plus.circle.fill")
-                        .labelStyle(.titleAndIcon)
-                        .background(.gray)
-                        .buttonStyle(.borderedProminent)
+                    Text("Ajouter")
+                        .padding(5)
+                        .background(.blue)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
                 }
             }
             .listStyle(.plain)
             .edgesIgnoringSafeArea([.top, .bottom])
-            .navigationTitle("Tous les services")
-            
+            .navigationTitle("Services")
             .padding(.bottom, 100)
         }
-        .navigationViewStyle(.columns)
+       // .navigationViewStyle(.columns)
         .environmentObject(focusState)
         .searchable(text: $_search)
-        //.navigationBarTitleDisplayMode(.)
+        .navigationBarTitleDisplayMode(.large)
+        .scrollDismissesKeyboard(ScrollDismissesKeyboardMode.immediately)
         .onAppear {
             dicoInfo = fetchModel.GetServiceMessage()
             oldService = article.this
@@ -314,113 +312,7 @@ struct ServicesAllView: View {
         .padding(.horizontal, 10)
         //.onAppear(perform: fetchModel.fetchSewing)
     }
-    
-    //@ViewBuilder
-    /*
-    func Categories() -> some View {
 
-            //let minY = Proxy.frame(in: .named("SCROLL")).minY
-            //var progress = minY / (proxyScroll.height * 400)
-
-            VStack{
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing:20){
-                        //Toutes catégories
-                        VStack{
-                            if (selectedCategory == ""){
-                                
-                            }
-                            Text("Pour vous")
-                                .font(Font.custom("Ubuntu", size: 25).bold())
-                                .opacity(selectedCategory == "" ? 1 : 0.8)
-                        }.onTapGesture {
-                            withAnimation(.easeInOut){
-                                selectedCategory = ""
-                            }
-                        }
-                        //Catégories
-                        ForEach(fetchModel.GetCategories().sorted(by: <), id: \.self) { index in
-                        VStack(alignment: .center, spacing: 20) {
-                            Text(index)
-                                .font(.custom("Ubuntu", size: 20))
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background()
-                                .clipShape(RoundedRectangle(cornerRadius: 50))
-                                .padding([.bottom, .horizontal],10)
-                        }.frame(width: 150 , height: 150, alignment:.bottom)
-                            .background{
-                                
-                                AsyncImage(url: URL(string: "http://\(urlServer):\(urlPort)/getimage?name=\(index)") , content: { image in
-                                    image.resizable()
-                                        .scaledToFill()
-                                        .clipped()
-                                        .grayscale(index == selectedCategory ? 0 : 1)
-                                }, placeholder: {
-                                    ProgressView()
-                                })
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 40))
-                            .shadow(color:.white,radius: index==selectedCategory ? 1 : 0)
-                            .onTapGesture {
-                                withAnimation (.spring()) {
-                                    selectedCategory = index
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 20)
-                .padding(.horizontal, 10)
-            }
-            .frame(height: 150, alignment:.bottom)
-        
-            //.offset(y: minY < 100 ? -minY : 0).animation(.easeInOut, value: minY)
-            .zIndex(10)
-            
-    }
-    */
-    @ViewBuilder
-    func Greetings(proxy:CGSize) -> some View{
-        GeometryReader { GeometryProxy in
-            let minY = GeometryProxy.frame(in: .named("SCROLL")).minY
-            var progress = minY / (proxy.height * 0.6)
-            VStack{
-                Image("page 1")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: proxy.width, height: proxy.height + (minY > 0 ? minY : 0))
-                    .clipped()
-                    .overlay(content: {
-                        ZStack (alignment: .top, content: {
-                            Rectangle().fill(.linearGradient(colors: [Color("fond").opacity(0 - progress),
-                                                                      Color("fond").opacity(0.1 - progress),
-                                                                      Color("fond").opacity(0.3 - progress),
-                                                                      Color("fond").opacity(0.5 - progress),
-                                                                      Color("fond").opacity(0.7 - progress),
-                                                                      Color("fond").opacity(1),]
-                                                             , startPoint: .top, endPoint: .bottom))
-                            HStack (spacing: 0, content: {
-                                Image(systemName: "person.circle.fill")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .tint(.secondary)
-                                    .clipShape(Circle())
-                                    .frame(width: 20)
-                                    .padding(.horizontal)
-                                //Text("Bonjour \(utilisateur.this.name),")
-                                    //.font(Font.custom("Ubuntu", size: 30,relativeTo: .title))
-                            })
-                            .padding(.top, 210)
-                            .opacity(minY == 0 ? 1 : (1 + progress))
-                            .offset(y: -minY)
-                        })
-                    })
-                    .offset(y : -minY) // L'image reste figée
-            }.frame(height: GeometryProxy.size.height * 40 + GeometryProxy.safeAreaInsets.top)
-        }
-    }
-    
     @State var new_Price:Decimal = Decimal()
     @State var quantity : Int = 0
     @State var price:String=String()

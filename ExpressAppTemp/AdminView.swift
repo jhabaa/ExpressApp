@@ -38,13 +38,12 @@ struct AdminView: View {
         TabView {
             CommandAllView().zIndex(4)
                 .tabItem {
-                    Label("Commands", systemImage: "cart.fill")
+                    Label("Commandes", systemImage: "cart.fill")
                 }
             
             UserAllView()
-                .edgesIgnoringSafeArea(.top)
                 .tabItem {
-                    Label("Users", systemImage: "person.fill")
+                    Label("Utilisateurs", systemImage: "person.fill")
                 }
                 .onAppear(perform: {
                     utilisateur.fetch()
@@ -68,7 +67,7 @@ struct AdminView: View {
                 }
         }
         .tint(Color("xpress"))
-
+        
 
     }
     .background(.linearGradient(colors: [.clear.opacity(0),.blue.opacity(0.3),.blue.opacity(0.4)], startPoint: UnitPoint.topLeading, endPoint: UnitPoint.bottomTrailing))

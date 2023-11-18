@@ -18,6 +18,10 @@ enum DateSelectionMode {
 case unique, range
 }
 
+enum missionType{
+    case takeIn, takeOut
+}
+
 struct CommandAllView: View {
     @State var selectedDate:Date = Date.init()
     @Namespace var namespace:Namespace.ID
@@ -121,62 +125,168 @@ struct CommandAllView: View {
                         }else{
                             
                             ForEach(commands_per_hour.keys.sorted(by: {$0 < $1}), id: \.self) { hour in
+                                
                                 Section {
                                     VStack {
                                         ForEach(commands_per_hour[hour]!, id: \.self) { com in
                                             //Guess if it's get day or not
-                                            let state:Bool = com.enter_date == selectedDate.mySQLFormat() ? true : false
                                             
-                                            //command card
-                                            
-                                            HStack{
-                                                //marker
-                                                Rectangle().fill(!state ? .red : .blue)
-                                                    .frame(maxWidth:5, maxHeight:.infinity)
-                                                // Month and adress
-                                                VStack{
-                                                    Text("\(selectedDate.month)")
-                                                        .font(.custom("Gotham-Black", size: 20))
-                                                        .bold()
-                                                    Text("\(selectedDate.day)")
-                                                        .font(.custom("Ubuntu", size: 20))
-                                                }
-                                                .padding()
-                                                .frame(height: 80)
-                                                .background(.ultraThinMaterial)
-                                                .padding(.trailing, 10)
-                                                
-                                                
+                                            let mission:missionType = com.enter_date == selectedDate.mySQLFormat() ? .takeIn : .takeOut
+                                           
+                                            switch mission {
+                                            case .takeIn:
                                                 HStack{
-                                                    //icons
-                                                        Image(systemName: state ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                                                    VStack(alignment:.leading){
-                                                        Text("\(utilisateur.userWithId(com.user!).surname) \(utilisateur.userWithId(com.user!).name)")
-                                                            .font(.custom("Gotham-Black", size: 20))
-                                                        Text("\(utilisateur.userWithId(com.user!).adress)")
-                                                            .font(.custom("Gotham-Black", size: 15))
-                                                        Text("\(!state ? "Livrer" : "Récupérer")")
-                                                            .font(.custom("Gotham-Black", size: 10))
-                                                            .padding(3)
-                                                            .background(!state ? .red : .blue)
-                                                            .clipShape(Capsule())
+                                                    // Month and adress
+                                                    VStack{
+                                                        HStack{
+                                                            Group{
+                                                                Text("\(selectedDate.dayReduce)")
+                                                                    .foregroundStyle(.blue)
+                                                                Text("\(selectedDate.month)")
+                                                                    .foregroundStyle(.gray)
+                                                            }
+                                                                .font(.title2)
+                                                                .bold()
+                                                        }
+                                                        
+                                                        Text("\(selectedDate.day)")
+                                                            .font(.largeTitle)
+                                                            .bold()
                                                     }
+                                                    .padding(2)
+                                                    .frame(height: 80)
+                                                    .background{
+                                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                            .fill(.bar)
+                                                            .shadow(radius: 10)
+                                                    }
+                                                    Rectangle()
+                                                        .fill(.blue)
+                                                        .frame(maxWidth:2,maxHeight: .infinity)
+                                                        
+                                                    
+                                                    HStack{
+                                                        VStack(alignment:.leading){
+                                                            let user = utilisateur.userWithId(com.user!)
+                                                            HStack{
+                                                                Text(user.name)
+                                                                    .font(.title2)
+                                                                    .bold()
+                                                                Text(user.surname)
+                                                                    .font(.title3)
+                                                                    .foregroundStyle(.gray)
+                                                            }
+                                                            //article number
+                                                            Group{
+                                                                Text("\(com.services_quantity.split(separator:";").count + 1) articles")
+                                                                    
+                                                                Text("\(com.cost.formatted()) €")
+                                                                
+                                                            }
+                                                            .font(.footnote)
+                                                            .foregroundStyle(.gray)
+                                                            Text("Récupérer")
+                                                                .font(.custom("Gotham-Black", size: 10))
+                                                                .padding(3)
+                                                                .background(.blue)
+                                                                .clipShape(RoundedRectangle(cornerRadius: 2))
+                                                        }
+                                                        .frame(maxWidth: .infinity, alignment:.leading)
+                                                    }
+                                                    .padding()
+                                                    .frame(height: 80)
+                                                   
                                                 }
-                                                .padding()
-                                                .frame(height: 80)
-                                                .background(.thinMaterial)
+                                                .onTapGesture {
+                                                    //To the trick : lets open the command interface
+                                                    selectedCommand = com
+                                                    //commande.editMode(com)
+                                                    commandeEditor = true
+                                                }
+                                            case .takeOut:
+                                                HStack{
+                                                   Spacer()
+
+                                                    //MARK: User Info block
+                                                    HStack{
+                                                        Spacer()
+                                                        VStack(alignment:.leading){
+                                                            let user = utilisateur.userWithId(com.user!)
+                                                            HStack{
+                                                                Text(user.name)
+                                                                    .font(.title2)
+                                                                    .bold()
+                                                                Text(user.surname)
+                                                                    .font(.title3)
+                                                                    .foregroundStyle(.gray)
+                                                            }
+                                                            //article number
+                                                            Group{
+                                                                Text("\(com.services_quantity.split(separator:";").count + 1) articles")
+                                                                    
+                                                                Text("\(com.cost.formatted()) €")
+                                                                
+                                                            }
+                                                            .font(.footnote)
+                                                            .foregroundStyle(.gray)
+                                                            Text("Livrer")
+                                                                .font(.custom("Gotham-Black", size: 10))
+                                                                .padding(3)
+                                                                .background(.red )
+                                                                .clipShape(RoundedRectangle(cornerRadius: 2))
+                                                        }
+                                                        .frame(maxWidth: .infinity, alignment:.leading)
+                                                    }
+                                                    .padding()
+                                                    .frame(maxWidth: .infinity, maxHeight:80,alignment:.trailing)
+                                                    
+
+                                                    //MARK: Separator
+                                                    Rectangle()
+                                                        .fill(.red)
+                                                        .frame(maxWidth:2,maxHeight: .infinity)
+                                                    
+                                                    // Month and adress
+                                                    VStack{
+                                                        HStack{
+                                                            Group{
+                                                                Text("\(selectedDate.dayReduce)")
+                                                                    .foregroundStyle(.red)
+                                                                Text("\(selectedDate.month)")
+                                                                    .foregroundStyle(.gray)
+                                                            }
+                                                                .font(.title2)
+                                                                .bold()
+                                                        }
+                                                        
+                                                        Text("\(selectedDate.day)")
+                                                            .font(.largeTitle)
+                                                            .bold()
+                                                    }
+                                                    .padding(2)
+                                                    .frame(height: 80)
+                                                    .background{
+                                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                            .fill(.bar)
+                                                            .shadow(radius: 10)
+                                                    }
+                                                   
+                                                }
+                                                .frame(maxWidth: .infinity, alignment:.trailing)
+                                                .onTapGesture {
+                                                    //To the trick : lets open the command interface
+                                                    selectedCommand = com
+                                                    //commande.editMode(com)
+                                                    commandeEditor = true
+                                                }
                                             }
-                                            .onTapGesture {
-                                                //To the trick : lets open the command interface
-                                                selectedCommand = com
-                                                //commande.editMode(com)
-                                                commandeEditor = true
-                                            }
+                                            
+                                            
                                         }
                                     }
                                     .ignoresSafeArea(edges: .horizontal)
                                 } header: {
-                                    if !commands_per_hour[hour]!.isEmpty{
+                                    if commands_per_hour[hour]!.isEmpty{
                                         Text("\(hour)h")
                                     }
                                 }
@@ -229,6 +339,9 @@ struct CommandAllView: View {
             if commandeEditor{
                 CommandDetailView( commande: selectedCommand, show: $commandeEditor)
                     .background()
+                    .onDisappear {
+                        commande.fetch()
+                    }
             }
             
             
@@ -389,7 +502,6 @@ struct CommandAllView: View {
                                             endDate = value.date
                                         }
                                     }
-                                    
                                 }
                                 
                                 print(selectedDate)
@@ -420,9 +532,6 @@ struct CommandAllView: View {
                             .fontWeight(.bold)
                             .multilineTextAlignment(.leading)
                     }
-                    
-                    
-                    
                     HStack{
                         //Bouton du mois précédent
                         

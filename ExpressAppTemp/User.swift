@@ -134,6 +134,33 @@ struct User:Codable,Hashable{
         let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
         return emailPredicate.evaluate(with: self.mail)
     }
+    
+    
+    /// Function to directly delete this user
+    /// - Returns: True if user has been properly deleted, false otherwise
+    func delete()async -> Bool{
+        guard let encoded = try? JSONEncoder().encode(self) else{
+            return false
+        }
+        let url = URL(string:"http://\(urlServer):\(urlPort)/deleteuser")!
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-type")
+        request.httpMethod = "POST"
+        do{
+            let (data, _) = try await URLSession.shared.upload(for: request, from: encoded)
+            print("Reponse de connexion daux données \(data)")
+            let result = try JSONDecoder().decode(String.self, from: data)
+            print(result)
+            if result=="True"{
+                return true
+            }else{
+                return false
+            }
+        } catch{
+            return false
+        }
+    }
+    
 }
 
 final class Utilisateur:ObservableObject{

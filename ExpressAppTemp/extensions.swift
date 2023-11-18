@@ -63,6 +63,11 @@ extension Date{
         dateFormatter.dateFormat = "dd"
         return dateFormatter.string(from: self)
     }
+    var dayReduce:String{
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "EE"
+        return dateFormatter.string(from: self)
+    }
     var month:String{
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM"

@@ -6,23 +6,14 @@
 //
 
 import SwiftUI
-import CoreLocation
-import MapKit
 
 struct UserAllView: View {
     @EnvironmentObject var userData : UserData
     @EnvironmentObject var fetchModel:FetchModels
     @EnvironmentObject var utilisateur:Utilisateur
-    @State var selectedUser:User = User()
-    @State private var moreInfos:Bool = false
+    @EnvironmentObject var alerte:Alerte
     @State var searchText:String=String.init()
-    @State var modifyMode:Bool=false
-    @State private var region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 37.334_900,
-                                           longitude: -122.009_020),
-            latitudinalMeters: 750,
-            longitudinalMeters: 750
-        )
+
     var body: some View {
         GeometryReader {
             _ in
@@ -34,26 +25,24 @@ struct UserAllView: View {
                                     Section{
                                         ForEach (utilisateur.all.sorted(by: {$0.id < $1.id}), id: \.self){ index in
                                             if(index.name.capitalized.contains(searchText)){
-                                                HStack{
-                                                    AsyncImage(url: URL(string: "http://\(urlServer):\(urlPort)/getimage?name=\(index.name)") , content: { image in
-                                                        image.resizable().scaledToFill()
-                                                    }, placeholder: {
-                                                        ProgressView()
-                                                    })
-                                                    .frame(width: 50, height: 50).foregroundColor(.gray)
-                                                    Divider()
-                                                    VStack{
-                                                        HStack{
-                                                            Text(index.name).font(.title2).bold()
-                                                            Text(index.surname).font(.title3)
-                                                            Spacer()
+                                                NavigationLink {
+                                                    UserDetailView(user:index)
+                                                } label: {
+                                                    HStack{
+                                                        VStack{
+                                                            HStack{
+                                                                Text(index.name).font(.title2).bold()
+                                                                Text(index.surname).font(.title3)
+                                                                Spacer()
+                                                            }
+                                                            .foregroundStyle(.blue)
+                                                            HStack{
+                                                                Text("@\(index.id.formatted())").font(.caption)
+                                                                Spacer()
+                                                            }
                                                         }
-                                                        HStack{
-                                                            Text("#\(index.id.formatted())").font(.caption)
-                                                            Spacer()
-                                                        }
+                                                        Spacer()
                                                     }
-                                                    Spacer()
                                                 }
                                             }
                                         }
@@ -61,9 +50,7 @@ struct UserAllView: View {
                                         Text("Resultats de recherche")
                                     }.transition(.slide)
                                 }
-                                
                             }
-                                
                            Text("Tous les utilisateurs")
                         }
                     Section{
@@ -78,56 +65,49 @@ struct UserAllView: View {
                                             Text(u.surname).font(.title3)
                                             Spacer()
                                         }
-                                        HStack{
-                                            Text("#\(u.id.formatted())").font(.caption).foregroundColor(.secondary)
-                                            Spacer()
+                                        VStack(alignment:.leading){
+                                            Group {
+                                                Text(u.phone)
+                                                    .font(.caption)
+                                                Text("@\(u.id.formatted())").font(.caption)
+                                            }
+                                            .foregroundColor(.secondary)
                                         }
-                                    }
-                                    .onTapGesture {
-                                       /*
-                                        DispatchQueue.main.async {
-                                            fetchModel.user_to_review = u
-                                            selectedUser = u
-                                        }*/
-                                        //moreInfos.toggle()
-
+                                        .frame(maxWidth: .infinity, alignment:.leading)
                                     }
                                     Spacer()
                                 }
                             }
-
-                           
-                            
-                            
-
                             //Swipe actions
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button(role:.destructive) {
-                                    
+                                    //Lets delete user
+                                    Task{
+                                        let response = await u.delete()
+                                        if response{
+                                            alerte.NewNotification(.amber, "L'utilisateur \(u.name) a été supprimé", UIImage(systemName: "person.fill.badge.minus"))
+                                        }
+                                    }
                                 } label: {
-                                    Image(systemName: "xmark.bin")
+                                    Image(systemName: "trash")
                                 }.tint(.red)
                             }
-                            
                         }
                     }
                     
                     }
+                .navigationTitle("Utilisateurs")
+                
                 //.edgesIgnoringSafeArea(.top)
             }
             
             //.ignoresSafeArea(.top)
-            .background(.ultraThinMaterial)
+            .background(.bar)
             .listStyle(.inset)
             .searchable(text: $searchText, prompt: Text("Rechercher un utilisateur"))
-            /*
-            .fullScreenCover(isPresented: $moreInfos) {
-                UserDetailView()
-            }*/
         }
         .onAppear{
             utilisateur.fetch()
-            
         }
     }
 }
@@ -137,5 +117,6 @@ struct UserAllView_Previews: PreviewProvider {
         UserAllView().environmentObject(UserData())
             .environmentObject(FetchModels())
             .environmentObject(Utilisateur())
+            .environmentObject(Alerte())
     }
 }

@@ -4,7 +4,7 @@
 //
 //  Created by Jean Hubert ABA'A on 08/04/2022.
 //
-
+/// Admin should be able to modify a command. Here is the admin view for a command. 
 import SwiftUI
 import MapKit
 
@@ -57,14 +57,14 @@ struct CommandDetailView: View {
                         VStack(alignment:.leading){
                             Text("\(price.formatted(.currency(code: "EUR")))")
                                 .font(.largeTitle)
-                                .overlay(alignment: .topTrailing) {
+                                .overlay(alignment: .topLeading) {
                                     Text("Sous-Total")
                                         .font(.custom("Ubuntu", size: 10))
-                                        .offset(x:20,y:-10)
+                                        .offset(y:-10)
                                         .multilineTextAlignment(.leading)
                                 }
                             //MARK: If price has changed
-                            if !(price != commande.sub_total){
+                            if (price != commande.sub_total){
                                 Text("Avant: \(commande.sub_total.formatted(.currency(code: "EUR")))")
                                     .font(.caption2)
                                     .foregroundStyle(.gray)
@@ -174,7 +174,6 @@ struct CommandDetailView: View {
                                     }
                                     .labelsHidden()
                                 }
-                               
                             }
                             HStack{
                                 DatePicker(selection: $newDateOut,displayedComponents: [.date], label: { Text("Livraison") })
@@ -204,9 +203,12 @@ struct CommandDetailView: View {
                                 .fill(.bar)
                         }
                     }
+                    Divider()
+                    .padding(.bottom, 100)
                 })
                
                 .overlay(alignment: .bottomTrailing, content: {
+                    let tempCommand = userdata.cartToString(panier)
                     Button("Mettre à jour"){
                         //Send command
                         Task{
@@ -225,7 +227,9 @@ struct CommandDetailView: View {
                     .padding()
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.capsule)
-                    .disabled(price == commande.sub_total)
+                    .offset(x: tempCommand != commande.services_quantity ? 0 : 300)
+                    .animation(.spring, value: panier)
+                    
                 })
                 .overlay(alignment: .topTrailing, content: {
                     Button {
@@ -244,8 +248,6 @@ struct CommandDetailView: View {
                     .tint(.secondary)
 
                 })
-        //.background(.thinMaterial)
-        //.background(_command.STATUS_COMMAND == "Sent" ? .blue.opacity(0.3) : .red.opacity(0.1))
                 .listStyle(.plain)
                 .preferredColorScheme(.dark)
         .onChange(of: panier, perform: { value in
@@ -256,14 +258,11 @@ struct CommandDetailView: View {
             Task{
                 user = utilisateur.userWithId(commande.user ?? 0)
                 let _ = await article.fetch()
-                DispatchQueue.main.async{
-                    //self.all_services_local = t
-                }
+                
                 //modif_condition = userdata.hoursBetween(userdata.dateTime,commande.this.enter_date.toDate(), 48)
                 panier = commande.ReadCommand(article)
                 newDateIn = commande.enter_date.toDate()
                 newDateOut = commande.return_date.toDate()
-                //fetchModel.fetchSewing()
                 userdata.taskbar = false
                 //date_in = commande.this.enter_date.toDate()
                 //MARK: Get price first

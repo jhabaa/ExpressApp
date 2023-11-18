@@ -7,6 +7,7 @@
 import SwiftUI
 import Foundation
 
+/// Presentationview to easily selected an image in the phone memory
 struct ImagePickerView: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
     @Environment(\.presentationMode) var presentationMode
